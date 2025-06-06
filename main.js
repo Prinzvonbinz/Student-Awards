@@ -10,6 +10,63 @@ let hostData = {
 
 let voteSubmitted = false;
 
+// Event Listener für Host Setup Formular (wichtig!)
+document.getElementById("hostSetupForm").addEventListener("submit", function(event) {
+  event.preventDefault(); // Verhindert Seiten-Neuladen
+
+  const year = document.getElementById("year").value.trim();
+  const className = document.getElementById("className").value.trim();
+  const categoriesRaw = document.getElementById("categories").value.trim();
+  const studentsRaw = document.getElementById("students").value.trim();
+  const deadline = document.getElementById("endDate").value;
+
+  if (!year || !className || !categoriesRaw || !studentsRaw || !deadline) {
+    alert("Bitte alle Felder ausfüllen.");
+    return;
+  }
+
+  const categories = categoriesRaw.split(",").map(s => s.trim()).filter(s => s.length > 0);
+
+  const students = studentsRaw.split("\n").map(line => {
+    const parts = line.split(",").map(p => p.trim());
+    if (parts.length !== 2) return null;
+    return { name: parts[0], gender: parts[1].toLowerCase() };
+  }).filter(s => s !== null);
+
+  if (students.length === 0 || categories.length === 0) {
+    alert("Bitte gültige Kategorien und Schüler eingeben.");
+    return;
+  }
+
+  hostData.year = year;
+  hostData.className = className;
+  hostData.categories = categories;
+  hostData.students = students;
+  hostData.deadline = deadline;
+
+  // 5-stelliger Zugangscode (A-Z + 0-9)
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 5; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  hostData.code = code;
+
+  // Speichern
+  localStorage.setItem("student_awards_host", JSON.stringify(hostData));
+
+  // Link bauen (aktuelle URL + ?code=XXXXX)
+  const baseUrl = window.location.origin + window.location.pathname;
+  const link = `${baseUrl}?code=${code}`;
+
+  // Link und Code anzeigen
+  document.getElementById("generatedLink").value = link;
+  document.getElementById("accessCode").textContent = code;
+  document.getElementById("hostLinkSection").classList.remove("hidden");
+
+  alert("Tabelle wurde erstellt! Teile den Link und Code mit deinen Mitschülern.");
+});
+
 function generateVotingForm() {
   const container = document.getElementById("votingForm");
   container.innerHTML = `<h2>Student-Awards ${hostData.className} ${hostData.year}</h2>`;
