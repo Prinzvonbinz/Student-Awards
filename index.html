@@ -1,40 +1,49 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Host-Menü - Abstimmung erstellen</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; color: #222; }
-    .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
-    input, textarea, button { width: 100%; margin-bottom: 12px; padding: 8px; font-size: 1rem; }
-    label { font-weight: bold; }
-    textarea { height: 120px; font-family: monospace; }
-    .result { background: #eef; padding: 10px; border-radius: 5px; margin-top: 12px; }
-    .error { color: red; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student Awards - Host Setup</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; background: #f9f9f9; }
+  h1 { text-align: center; color: #333; }
+  label { display: block; margin-top: 15px; font-weight: bold; }
+  input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+  button { margin-top: 20px; padding: 10px 20px; font-size: 1.1em; background-color: #0078d7; color: white; border: none; cursor: pointer; border-radius: 4px; }
+  button:hover { background-color: #005fa3; }
+  #result { margin-top: 20px; background: #e2ffe2; padding: 15px; border-radius: 5px; }
+  .error { color: red; margin-top: 10px; }
+  small { color: #555; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Abstimmung erstellen (Host-Menü)</h1>
+  <h1>Student Awards - Host Setup</h1>
+  <form id="hostForm">
+    <label for="year">Jahr (z.B. 2025):</label>
+    <input type="number" id="year" name="year" min="2000" max="2100" required />
 
-    <label for="className">Klasse / Gruppe:</label>
-    <input type="text" id="className" placeholder="z.B. 10a" />
+    <label for="className">Klassenname (z.B. 10B):</label>
+    <input type="text" id="className" name="className" required />
 
-    <label for="categories">Kategorien (je eine pro Zeile):</label>
-    <textarea id="categories" placeholder="Kategorie 1\nKategorie 2\nKategorie 3"></textarea>
+    <label for="categories">Kategorien (Kommagetrennt):</label>
+    <input type="text" id="categories" name="categories" placeholder="z.B. Sportlichste Person, Kreativster Kopf" required />
 
-    <label for="students">Schülerliste (je Zeile: Name, Geschlecht (m/w)):</label>
-    <textarea id="students" placeholder="Max Mustermann,m\nAnna Beispiel,w"></textarea>
+    <label for="students">Schülerliste (je Zeile: Name, m oder Name, w):</label>
+    <textarea id="students" name="students" rows="8" placeholder="Max Mustermann, m\nAnna Beispiel, w" required></textarea>
 
-    <label for="deadline">Abstimmungs-Deadline (Datum):</label>
-    <input type="date" id="deadline" />
+    <label for="deadline">Abgabedatum (Deadline):</label>
+    <input type="date" id="deadline" name="deadline" required />
 
-    <button id="createTableBtn">Tabelle erstellen & Link generieren</button>
+    <button type="submit">Tabelle erstellen &amp; Link generieren</button>
+    <div class="error" id="errorMsg"></div>
+  </form>
 
-    <div id="resultSection" class="result" style="display:none;"></div>
+  <div id="result" style="display:none;">
+    <p><strong>Zugangscode:</strong> <span id="accessCode"></span></p>
+    <p><strong>Teilnehmer-Link:</strong> <a href="#" id="voteLink" target="_blank"></a></p>
+    <p><small>Link und Code wurden lokal im Browser gespeichert.</small></p>
   </div>
 
-  <script src="main.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
