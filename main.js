@@ -1,172 +1,302 @@
-let hostData = {
-  className: "",
-  year: new Date().getFullYear(),
-  categories: [],
-  students: [],
-  deadline: "",
-  code: "",
-  votes: [],
-};
+// Helfer-Funktion: URL-Parameter auslesen
+function getQueryParam(param) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(param);
+}
 
-let voteSubmitted = false;
-
-// Event Listener für Host Setup Formular (wichtig!)
-document.getElementById("hostSetupForm").addEventListener("submit", function(event) {
-  event.preventDefault(); // Verhindert Seiten-Neuladen
-
-  const year = document.getElementById("year").value.trim();
-  const className = document.getElementById("className").value.trim();
-  const categoriesRaw = document.getElementById("categories").value.trim();
-  const studentsRaw = document.getElementById("students").value.trim();
-  const deadline = document.getElementById("endDate").value;
-
-  if (!year || !className || !categoriesRaw || !studentsRaw || !deadline) {
-    alert("Bitte alle Felder ausfüllen.");
-    return;
-  }
-
-  const categories = categoriesRaw.split(",").map(s => s.trim()).filter(s => s.length > 0);
-
-  const students = studentsRaw.split("\n").map(line => {
-    const parts = line.split(",").map(p => p.trim());
-    if (parts.length !== 2) return null;
-    return { name: parts[0], gender: parts[1].toLowerCase() };
-  }).filter(s => s !== null);
-
-  if (students.length === 0 || categories.length === 0) {
-    alert("Bitte gültige Kategorien und Schüler eingeben.");
-    return;
-  }
-
-  hostData.year = year;
-  hostData.className = className;
-  hostData.categories = categories;
-  hostData.students = students;
-  hostData.deadline = deadline;
-
-  // 5-stelliger Zugangscode (A-Z + 0-9)
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+// Funktion: 5-stelliger Code (A-Z)
+function generateCode() {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let code = "";
   for (let i = 0; i < 5; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += letters.charAt(Math.floor(Math.random() * letters.length));
   }
-  hostData.code = code;
+  return code;
+}
 
-  // Speichern
-  localStorage.setItem("student_awards_host", JSON.stringify(hostData));
+// --- Index.html Skript ---
+function setupHost() {
+  const form = document.getElementById("hostSetupForm");
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
 
-  // Link bauen (aktuelle URL + ?code=XXXXX)
-  const baseUrl = window.location.origin + window.location.pathname;
-  const link = `${baseUrl}?code=${code}`;
+    // Daten holen
+    const year = document.getElementById("year").value.trim();
+    const className = document.getElementById("className").value.trim();
+    const categoriesRaw = document.getElementById("categories").value.trim();
+    const studentsRaw = document.getElementById("students").value.trim();
+    const endDate = document.getElementById("endDate").value;
 
-  // Link und Code anzeigen
-  document.getElementById("generatedLink").value = link;
-  document.getElementById("accessCode").textContent = code;
-  document.getElementById("hostLinkSection").classList.remove("hidden");
+    if (!year || !className || !categoriesRaw || !studentsRaw || !endDate) {
+      alert("Bitte alle Felder ausfüllen!");
+      return;
+    }
 
-  alert("Tabelle wurde erstellt! Teile den Link und Code mit deinen Mitschülern.");
-});
+    const categories = categoriesRaw.split(",").map(c => c.trim()).filter(c => c.length > 0);
+    if (categories.length === 0) {
+      alert("Bitte mindestens eine Kategorie angeben.");
+      return;
+    }
 
-function generateVotingForm() {
-  const container = document.getElementById("votingForm");
-  container.innerHTML = `<h2>Student-Awards ${hostData.className} ${hostData.year}</h2>`;
+    const students = [];
+    const lines = studentsRaw.split("\n");
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+      const parts = line.split(",");
+      if (parts.length !== 2) {
+        alert(`Ungültiges Schülerformat: "${line}" (Name,Geschlecht) erwartet.`);
+        return;
+      }
+      const name = parts[0].trim();
+      const gender = parts[1].trim().toLowerCase();
+      if (!name || (gender !== "m" && gender !== "w")) {
+        alert(`Ungültige Schülerdaten: "${line}". Geschlecht muss "m" oder "w" sein.`);
+        return;
+      }
+      students.push({ name, gender });
+    }
 
-  hostData.categories.forEach(cat => {
-    const div = document.createElement("div");
-    div.className = "vote-category";
+    if (students.length === 0) {
+      alert("Bitte mindestens einen Schüler angeben.");
+      return;
+    }
 
-    div.innerHTML = `
-      <h3>${cat}</h3>
-      <label>Junge:</label>
-      <input type="text" data-cat="${cat}" data-gen="m" />
-      <label>Mädchen:</label>
-      <input type="text" data-cat="${cat}" data-gen="w" />
-    `;
+    // Code generieren, doppelte vermeiden
+    let code;
+    do {
+      code = generateCode();
+    } while (localStorage.getItem("student_awards_" + code));
 
-    container.appendChild(div);
+    // Daten speichern
+    const hostData = {
+      year,
+      className,
+      categories,
+      students,
+      endDate,
+      votes: []  // Array für gespeicherte Stimmen
+    };
+
+    localStorage.setItem("student_awards_" + code, JSON.stringify(hostData));
+
+    // Link anzeigen
+    const baseUrl = window.location.origin + window.location.pathname.replace(/index\.html$/, "");
+    const link = baseUrl + "vote.html?code=" + code;
+
+    document.getElementById("hostLinkSection").style.display = "block";
+    document.getElementById("generatedLink").value = link;
+    document.getElementById("accessCode").textContent = code;
   });
-
-  container.innerHTML += `<button onclick="submitVotes()">Abgeben</button>`;
 }
 
-function submitVotes() {
-  const inputs = document.querySelectorAll("#votingForm input");
-  const votes = {};
+// --- vote.html Skript ---
+function setupVote() {
+  const info = document.getElementById("info");
+  const voteForm = document.getElementById("voteForm");
+  const submitBtn = document.getElementById("submitVoteBtn");
+  const deadlineWarning = document.getElementById("deadlineWarning");
+  const resultSection = document.getElementById("resultSection");
+  const resultsDiv = document.getElementById("results");
 
-  for (let input of inputs) {
-    const cat = input.dataset.cat;
-    const gen = input.dataset.gen;
-    const name = input.value.trim();
-
-    if (!votes[cat]) votes[cat] = {};
-    if (!name) {
-      alert("Bitte fülle alle Felder aus oder gib '-' ein.");
-      return;
-    }
-
-    if (name !== "-" && !hostData.students.find(s => s.name === name && s.gender.startsWith(gen))) {
-      alert(`Name "${name}" passt nicht zur Kategorie (${cat}) und Geschlecht.`);
-      return;
-    }
-
-    votes[cat][gen] = name;
-  }
-
-  hostData.votes.push(votes);
-  localStorage.setItem("student_awards_host", JSON.stringify(hostData));
-  voteSubmitted = true;
-
-  document.getElementById("votingForm").innerHTML = "<h2>Danke fürs Abstimmen! 🎉</h2>";
-}
-
-function showResults() {
-  const data = JSON.parse(localStorage.getItem("student_awards_host"));
-  if (!data) return;
-
-  const now = new Date();
-  const end = new Date(data.deadline);
-  if (now < end) {
-    const countdown = Math.ceil((end - now) / 1000 / 60 / 60 / 24);
-    document.getElementById("resultSection").innerHTML = `<h2>Ergebnisse in ${countdown} Tagen</h2>`;
+  // Code aus URL holen
+  const code = getQueryParam("code");
+  if (!code) {
+    info.textContent = "Kein Code angegeben.";
     return;
   }
 
-  const results = {};
-  data.categories.forEach(cat => {
-    results[cat] = { m: {}, w: {} };
-  });
+  // Daten aus localStorage laden
+  const dataRaw = localStorage.getItem("student_awards_" + code.toUpperCase());
+  if (!dataRaw) {
+    info.textContent = "Kein gültiger Code gefunden.";
+    return;
+  }
 
-  data.votes.forEach(vote => {
-    for (let cat in vote) {
-      for (let gen in vote[cat]) {
-        const name = vote[cat][gen];
-        if (name === "-") continue;
-        results[cat][gen][name] = (results[cat][gen][name] || 0) + 1;
+  const data = JSON.parse(dataRaw);
+
+  // Deadline prüfen
+  const today = new Date();
+  const deadlineDate = new Date(data.endDate + "T23:59:59");
+  if (today > deadlineDate) {
+    deadlineWarning.style.display = "block";
+  }
+
+  info.innerHTML = `
+    Jahr: ${data.year} <br>
+    Klasse: ${data.className} <br>
+    Kategorien: ${data.categories.join(", ")} <br>
+    Anzahl Schüler: ${data.students.length} <br>
+    Abstimmungsende: ${data.endDate}
+  `;
+
+  if (today > deadlineDate) {
+    submitBtn.style.display = "none";
+  } else {
+    submitBtn.style.display = "block";
+  }
+
+  // Falls schon abgestimmt (Pro Schüler Name) - hier keine Einschränkung, du kannst das anpassen
+
+  // Tabelle bauen mit je Kategorie eine Spalte, je Schüler eine Zeile
+  // Für jede Zelle: Radio Buttons mit Schülernamen pro Kategorie
+
+  // Tabelle aufbauen
+  const table = document.createElement("table");
+
+  // Header
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  headerRow.appendChild(document.createElement("th")); // leere linke obere Ecke
+  for (const cat of data.categories) {
+    const th = document.createElement("th");
+    th.textContent = cat;
+    headerRow.appendChild(th);
+  }
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  // Body
+  const tbody = document.createElement("tbody");
+
+  // Pro Kategorie eine Spalte mit Radios, wir müssen aber pro Kategorie einen Radiobutton pro Schüler machen
+  // Die klassische Logik ist: pro Kategorie kann nur ein Schüler gewählt werden.
+  // Also pro Kategorie: eine Gruppe Radio mit name=category_X
+
+  // Wir bauen pro Kategorie eine Spalte, das heißt für jeden Schüler wird eine Zeile erzeugt, die Zellen haben Radio in der Spalte je Kategorie.
+
+  // Um das umzusetzen: Für jede Schüler-Zeile, in jeder Kategorie-Zelle, Radio, die alle für dieselbe Kategorie die gleiche "name" haben, Value = Schülername
+
+  for (let i = 0; i < data.students.length; i++) {
+    const student = data.students[i];
+    const tr = document.createElement("tr");
+
+    // Erste Spalte: Schülername
+    const tdName = document.createElement("td");
+    tdName.textContent = student.name + (student.gender === "w" ? " (w)" : " (m)");
+    tdName.style.textAlign = "left";
+    tr.appendChild(tdName);
+
+    // Pro Kategorie Radios
+    for (let c = 0; c < data.categories.length; c++) {
+      const td = document.createElement("td");
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "category_" + c;
+      radio.value = student.name;
+      td.appendChild(radio);
+      tr.appendChild(td);
+    }
+
+    tbody.appendChild(tr);
+  }
+
+  table.appendChild(tbody);
+  voteForm.appendChild(table);
+
+  // Beim Klick auf Abstimmen speichern wir die Stimmen in data.votes
+
+  submitBtn.onclick = () => {
+    // Check, dass pro Kategorie was gewählt ist
+    for (let c = 0; c < data.categories.length; c++) {
+      const radios = document.getElementsByName("category_" + c);
+      if (![...radios].some(r => r.checked)) {
+        alert(`Bitte wähle einen Schüler für die Kategorie "${data.categories[c]}" aus.`);
+        return;
       }
     }
-  });
 
-  const container = document.getElementById("resultSection");
-  container.innerHTML = `<h2>Ergebnisse – Student-Awards ${data.className} ${data.year}</h2>`;
+    // Stimmen zusammenstellen
+    // Stimmen-Array: pro Kategorie ein Objekt { category: "Kategorie", student: "Name" }
+    const votesEntry = [];
+    for (let c = 0; c < data.categories.length; c++) {
+      const radios = document.getElementsByName("category_" + c);
+      const checked = [...radios].find(r => r.checked);
+      votesEntry.push({
+        category: data.categories[c],
+        student: checked.value
+      });
+    }
 
-  for (let cat of data.categories) {
-    const div = document.createElement("div");
-    div.className = "vote-category";
-    div.innerHTML = `<h3>${cat}</h3>`;
+    // In data.votes speichern
+    data.votes.push(votesEntry);
 
-    ["m", "w"].forEach(gen => {
-      const genderTitle = gen === "m" ? "Junge" : "Mädchen";
-      const entries = results[cat][gen];
-      const max = Math.max(...Object.values(entries), 0);
-      const winners = Object.entries(entries).filter(([_, val]) => val === max);
+    // Speichern zurück in localStorage
+    localStorage.setItem("student_awards_" + code.toUpperCase(), JSON.stringify(data));
 
-      if (winners.length === 0) {
-        div.innerHTML += `<p><strong>${genderTitle}:</strong> -</p>`;
-      } else {
-        div.innerHTML += `<p><strong>${genderTitle}:</strong> ${winners.map(w => `${w[0]} (${w[1]})`).join(", ")}</p>`;
+    // Ergebnis anzeigen
+    showResults(data);
+
+    // Abstimmen-Button ausblenden und Formular deaktivieren
+    submitBtn.style.display = "none";
+    voteForm.querySelectorAll("input").forEach(i => i.disabled = true);
+  };
+
+  // Funktion zur Ergebnisauswertung
+  function showResults(data) {
+    resultSection.style.display = "block";
+    resultsDiv.innerHTML = "";
+
+    // Wir zählen pro Kategorie die Stimmen je Schüler
+    const tally = {}; // { Kategorie: { Schülername: Anzahl } }
+
+    for (const cat of data.categories) {
+      tally[cat] = {};
+      for (const s of data.students) {
+        tally[cat][s.name] = 0;
       }
-    });
+    }
 
-    container.appendChild(div);
+    for (const voteEntry of data.votes) {
+      for (const vote of voteEntry) {
+        if (tally[vote.category] && tally[vote.category][vote.student] !== undefined) {
+          tally[vote.category][vote.student]++;
+        }
+      }
+    }
+
+    // Ergebnis-Tabelle bauen
+    const resTable = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+
+    headRow.appendChild(document.createElement("th")); // leer links
+    for (const s of data.students) {
+      const th = document.createElement("th");
+      th.textContent = s.name;
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    resTable.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    for (const cat of data.categories) {
+      const tr = document.createElement("tr");
+      const tdCat = document.createElement("td");
+      tdCat.textContent = cat;
+      tdCat.style.fontWeight = "bold";
+      tr.appendChild(tdCat);
+
+      for (const s of data.students) {
+        const td = document.createElement("td");
+        td.textContent = tally[cat][s.name];
+        tr.appendChild(td);
+      }
+
+      tbody.appendChild(tr);
+    }
+    resTable.appendChild(tbody);
+
+    resultsDiv.appendChild(resTable);
   }
 }
+
+// Main: Je nach Datei initialisieren
+document.addEventListener("DOMContentLoaded", () => {
+  const path = window.location.pathname;
+  if (path.endsWith("index.html") || path.endsWith("/")) {
+    setupHost();
+  } else if (path.endsWith("vote.html")) {
+    setupVote();
+  }
+});
