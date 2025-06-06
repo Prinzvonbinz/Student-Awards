@@ -3,56 +3,148 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Student Awards - Abstimmung</title>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; padding: 10px; background: #f0f8ff; }
-  h1, h2 { text-align: center; color: #222; }
-  #voteSection { margin-top: 20px; }
-  .category {
-    border: 1px solid #ccc; border-radius: 6px; padding: 10px; margin-bottom: 15px; background: white;
-  }
-  .category h3 { margin: 0 0 8px 0; }
-  label { display: inline-block; width: 80px; font-weight: bold; }
-  input[type="text"] {
-    width: calc(100% - 90px); padding: 6px; margin-bottom: 8px;
-    border: 1px solid #aaa; border-radius: 4px;
-  }
-  button {
-    display: block; margin: 25px auto; padding: 12px 25px;
-    background-color: #0078d7; color: white; font-size: 1.2em; border: none; border-radius: 5px; cursor: pointer;
-  }
-  button:hover { background-color: #005fa3; }
-  #message { margin-top: 15px; text-align: center; font-weight: bold; color: green; }
-  #errorMsg { color: red; text-align: center; margin-top: 10px; }
-  #countdown { text-align: center; margin: 15px 0; font-weight: bold; }
-  #results { margin-top: 30px; background: #dff0d8; padding: 15px; border-radius: 6px; display: none; }
-  #results h2 { text-align: center; }
-  #results ul { list-style-type: none; padding-left: 0; }
-  #results li { margin-bottom: 8px; }
-</style>
+<title>Abstimmung - Schüler-Auszeichnung</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Abstimmung</h1>
-  <div id="codeInputSection">
-    <label for="accessCodeInput">Bitte Zugangscode eingeben:</label><br />
-    <input type="text" id="accessCodeInput" maxlength="5" style="text-transform:uppercase; width: 150px; padding: 6px;" />
-    <button id="codeSubmitBtn">Starten</button>
-    <div id="codeError" style="color: red; margin-top: 10px;"></div>
-  </div>
+  <h1>Schüler-Auszeichnung - Abstimmung</h1>
 
-  <div id="voteSection" style="display:none;">
-    <div id="countdown"></div>
-    <form id="voteForm"></form>
-    <button id="submitVoteBtn">Abgeben</button>
-    <div id="message"></div>
-    <div id="errorMsg"></div>
-  </div>
+  <section id="login-section">
+    <label for="codeInput">Bitte Zugangscode eingeben:</label><br/>
+    <input type="text" id="codeInput" maxlength="5" placeholder="Zugangscode" />
+    <button id="loginBtn">Weiter</button>
+    <p id="loginError" style="color:red; display:none;"></p>
+  </section>
 
-  <div id="results">
-    <h2>Ergebnisse</h2>
-    <div id="resultsContent"></div>
-  </div>
+  <section id="vote-section" style="display:none;">
+    <form id="voteForm">
+      <div id="categoriesContainer"></div>
+      <button type="submit">Abgeben</button>
+    </form>
+    <p id="voteMessage" style="color:green; display:none;"></p>
+  </section>
 
-<script src="main.js"></script>
+<script src="vote.js"></script>
 </body>
 </html>
+// --- vote.js ---
+
+const loginSection = document.getElementById('login-section');
+const codeInput = document.getElementById('codeInput');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+
+const voteSection = document.getElementById('vote-section');
+const categoriesContainer = document.getElementById('categoriesContainer');
+const voteForm = document.getElementById('voteForm');
+const voteMessage = document.getElementById('voteMessage');
+
+let hostData = null;
+
+loginBtn.addEventListener('click', () => {
+  const code = codeInput.value.trim().toUpperCase();
+  if (!code) {
+    showLoginError('Bitte Zugangscode eingeben.');
+    return;
+  }
+  const stored = localStorage.getItem('student_awards_host');
+  if (!stored) {
+    showLoginError('Keine Host-Daten gefunden.');
+    return;
+  }
+  const data = JSON.parse(stored);
+  if (data.accessCode !== code) {
+    showLoginError('Ungültiger Zugangscode.');
+    return;
+  }
+  hostData = data;
+
+  loginSection.style.display = 'none';
+  voteSection.style.display = 'block';
+
+  buildVoteForm();
+});
+
+function showLoginError(msg) {
+  loginError.textContent = msg;
+  loginError.style.display = 'block';
+}
+
+function buildVoteForm() {
+  categoriesContainer.innerHTML = '';
+
+  for (const cat of hostData.categories) {
+    const catDiv = document.createElement('div');
+    catDiv.classList.add('category');
+
+    const title = document.createElement('h3');
+    title.textContent = cat;
+    catDiv.appendChild(title);
+
+    // Junge Input
+    const maleLabel = document.createElement('label');
+    maleLabel.textContent = 'Junge: ';
+    const maleInput = document.createElement('input');
+    maleInput.type = 'text';
+    maleInput.name = `${cat}_m`;
+    maleInput.placeholder = 'Name Junge oder "-"';
+    maleInput.required = true;
+    maleLabel.appendChild(maleInput);
+    catDiv.appendChild(maleLabel);
+
+    // Mädchen Input
+    const femaleLabel = document.createElement('label');
+    femaleLabel.textContent = 'Mädchen: ';
+    const femaleInput = document.createElement('input');
+    femaleInput.type = 'text';
+    femaleInput.name = `${cat}_w`;
+    femaleInput.placeholder = 'Name Mädchen oder "-"';
+    femaleInput.required = true;
+    femaleLabel.appendChild(femaleInput);
+    catDiv.appendChild(femaleLabel);
+
+    categoriesContainer.appendChild(catDiv);
+  }
+}
+
+voteForm.addEventListener('submit', e => {
+  e.preventDefault();
+  voteMessage.style.display = 'none';
+
+  // Werte prüfen
+  const formData = new FormData(voteForm);
+  const votes = {};
+  for (const cat of hostData.categories) {
+    const maleName = formData.get(`${cat}_m`).trim();
+    const femaleName = formData.get(`${cat}_w`).trim();
+
+    if (!validateName(maleName, 'm') || !validateName(femaleName, 'w')) {
+      alert(`Ungültige Eingabe bei Kategorie "${cat}".\nBitte gültige Namen oder "-" eingeben.`);
+      return;
+    }
+    votes[cat] = { m: maleName, w: femaleName };
+  }
+
+  // Stimmen speichern in localStorage unter "student_awards_votes"
+  // Stimmen sind ein Array von Objekten (pro Abstimmung)
+  const votesStr = localStorage.getItem('student_awards_votes');
+  const votesArr = votesStr ? JSON.parse(votesStr) : [];
+  votesArr.push(votes);
+  localStorage.setItem('student_awards_votes', JSON.stringify(votesArr));
+
+  voteMessage.textContent = 'Vielen Dank für Ihre Abstimmung!';
+  voteMessage.style.display = 'block';
+
+  voteForm.reset();
+});
+
+function validateName(name, gender) {
+  if (name === '-') return true;
+  const s = hostData.students;
+  for (const student of s) {
+    if (student.gender === gender && student.name.toLowerCase() === name.toLowerCase()) {
+      return true;
+    }
+  }
+  return false;
+}
