@@ -3,31 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student-Awards Abstimmung</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Teilnehmer - Abstimmung</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; color: #222; }
+    .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; }
+    th { background: #eee; }
+    input[type=text] { width: 90%; padding: 6px; }
+    .hidden { display: none; }
+    button { padding: 10px 20px; font-size: 1rem; margin-top: 12px; }
+    .error { color: red; }
+    .info { margin-top: 15px; background: #eef; padding: 10px; border-radius: 5px; }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Student-Awards Abstimmung</h1>
+
+    <h1>Abstimmung</h1>
+
+    <div id="codeError" class="error" style="display:none;"></div>
 
     <section id="votingSection" class="hidden">
-      <h2>Abstimmung</h2>
-      <p>Für jede Kategorie bitte je einen Jungen und ein Mädchen auswählen oder "-" eintragen.</p>
       <form id="votingForm"></form>
-      <button id="submitVotesBtn">Abgeben</button>
-      <p id="voteMessage" class="error"></p>
+      <button id="submitVotesBtn">Abstimmen senden</button>
+      <div id="voteMessage" class="error"></div>
     </section>
 
     <section id="waitingSection" class="hidden">
-      <h2>Abstimmung abgeschlossen</h2>
-      <p>Warte auf das Ergebnis. Es wird angezeigt am <span id="resultDateDisplay"></span></p>
-      <p>Countdown: <span id="countdownTimer"></span></p>
+      <p>Danke für deine Abstimmung! Die Ergebnisse werden nach Ablauf der Frist angezeigt.</p>
+      <p>Abstimmungsende: <span id="resultDateDisplay"></span></p>
+      <p>Verbleibende Zeit: <span id="countdownTimer"></span></p>
     </section>
 
     <section id="resultsSection" class="hidden">
       <h2>Ergebnisse</h2>
       <div id="resultSection"></div>
     </section>
+
   </div>
 
   <script src="main.js"></script>
