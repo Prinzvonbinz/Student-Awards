@@ -1,133 +1,34 @@
-/* style.css */
-
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f7f7f7;
-  color: #222;
+  font-family: sans-serif;
+  background-color: #1e1e2f;
+  color: #f0f0f0;
   margin: 0;
   padding: 20px;
 }
 
 .container {
-  max-width: 700px;
-  margin: 0 auto;
-  background: #fff;
-  padding: 25px 30px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.1);
-  border-radius: 8px;
+  max-width: 800px;
+  margin: auto;
+  background: #2e2e3f;
+  padding: 20px;
+  border-radius: 10px;
 }
 
-h1, h2, h3 {
-  color: #2c3e50;
-}
-
-h1 {
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-form label {
-  display: block;
-  margin-top: 15px;
-  font-weight: bold;
-}
-
-form input[type="text"],
-form input[type="number"],
-form input[type="date"],
-form textarea {
+input, textarea, select, button {
   width: 100%;
-  padding: 8px 10px;
-  margin-top: 6px;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  font-size: 1rem;
-  box-sizing: border-box;
-  resize: vertical;
-}
-
-form textarea {
-  min-height: 80px;
+  padding: 10px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border: none;
+  border-radius: 5px;
 }
 
 button {
-  margin-top: 20px;
-  padding: 12px 18px;
-  font-size: 1rem;
-  background-color: #2c3e50;
+  background-color: #5e60ce;
   color: white;
-  border: none;
-  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #34495e;
-}
-
-.hidden {
-  display: none;
-}
-
-.error {
-  color: #c0392b;
-  margin-top: 8px;
-  font-weight: bold;
-}
-
-.vote-category {
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #ddd;
-}
-
-.vote-category label {
-  margin-right: 8px;
-}
-
-input[type="text"][data-gen] {
-  width: 48%;
-  margin-right: 4%;
-  display: inline-block;
-}
-
-input[type="text"][data-gen]:last-child {
-  margin-right: 0;
-}
-
-#resultSection table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-#resultSection th, #resultSection td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-}
-
-#resultSection th {
-  background-color: #34495e;
-  color: white;
-}
-
-#resultSection td {
-  background-color: #ecf0f1;
-}
-
-#hostLinkSection input {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 1rem;
-  margin-bottom: 10px;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  background-color: #f1f1f1;
-}
-
-#countdownTimer {
-  font-weight: bold;
-  color: #2980b9;
+  background-color: #4a4cc0;
 }
