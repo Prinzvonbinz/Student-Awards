@@ -3,46 +3,44 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Student Awards - Host Setup</title>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; background: #f9f9f9; }
-  h1 { text-align: center; color: #333; }
-  label { display: block; margin-top: 15px; font-weight: bold; }
-  input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-  button { margin-top: 20px; padding: 10px 20px; font-size: 1.1em; background-color: #0078d7; color: white; border: none; cursor: pointer; border-radius: 4px; }
-  button:hover { background-color: #005fa3; }
-  #result { margin-top: 20px; background: #e2ffe2; padding: 15px; border-radius: 5px; }
-  .error { color: red; margin-top: 10px; }
-  small { color: #555; }
-</style>
+<title>Host-Menü - Schüler-Auszeichnung</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Host Setup</h1>
-  <form id="hostForm">
-    <label for="year">Jahr (z.B. 2025):</label>
-    <input type="number" id="year" name="year" min="2000" max="2100" required />
+  <h1>Schüler-Auszeichnung - Host-Menü</h1>
 
-    <label for="className">Klassenname (z.B. 10B):</label>
-    <input type="text" id="className" name="className" required />
+  <section id="setup-section">
+    <h2>Setup der Auszeichnung</h2>
+    <label for="year">Jahr:</label>
+    <input type="number" id="year" placeholder="z.B. 2025" min="2000" max="2100" required /><br/>
+
+    <label for="className">Klasse:</label>
+    <input type="text" id="className" placeholder="z.B. 10B" required /><br/>
 
     <label for="categories">Kategorien (Kommagetrennt):</label>
-    <input type="text" id="categories" name="categories" placeholder="z.B. Sportlichste Person, Kreativster Kopf" required />
+    <input type="text" id="categories" placeholder="z.B. Sportlichste Person, Kreativster Kopf" required /><br/>
 
-    <label for="students">Schülerliste (je Zeile: Name, m oder Name, w):</label>
-    <textarea id="students" name="students" rows="8" placeholder="Max Mustermann, m\nAnna Beispiel, w" required></textarea>
+    <label for="students">Schüler (Name, Geschlecht 'm' oder 'w' pro Zeile, z.B. Max,m):</label><br/>
+    <textarea id="students" placeholder="Max,m&#10;Anna,w" rows="8" required></textarea><br/>
 
-    <label for="deadline">Abgabedatum (Deadline):</label>
-    <input type="date" id="deadline" name="deadline" required />
+    <label for="deadline">Abgabedatum (Ergebnisse ab dann sichtbar):</label>
+    <input type="date" id="deadline" required /><br/>
 
-    <button type="submit">Tabelle erstellen &amp; Link generieren</button>
-    <div class="error" id="errorMsg"></div>
-  </form>
+    <button id="createTableBtn">Tabelle erstellen & Link generieren</button>
+  </section>
 
-  <div id="result" style="display:none;">
-    <p><strong>Zugangscode:</strong> <span id="accessCode"></span></p>
-    <p><strong>Teilnehmer-Link:</strong> <a href="#" id="voteLink" target="_blank"></a></p>
-    <p><small>Link und Code wurden lokal im Browser gespeichert.</small></p>
-  </div>
+  <section id="result-section" style="display:none;">
+    <h2>Teilnahme-Link & Code</h2>
+    <p>Teilnahmelink:</p>
+    <a id="participationLink" href="#" target="_blank"></a><br/>
+    <p>Zugangscode: <strong id="accessCode"></strong></p>
+    <button id="resetBtn">Neu starten / Reset</button>
+  </section>
+
+  <section id="results-section" style="display:none;">
+    <h2>Ergebnisse</h2>
+    <div id="resultsContent"></div>
+  </section>
 
 <script src="main.js"></script>
 </body>
