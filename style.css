@@ -1,102 +1,133 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', sans-serif;
-}
+/* style.css */
 
 body {
-  background-color: #121212;
-  color: #e0e0e0;
-  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background-color: #f7f7f7;
+  color: #222;
+  margin: 0;
   padding: 20px;
 }
 
 .container {
-  max-width: 800px;
+  max-width: 700px;
   margin: 0 auto;
-  padding: 20px;
+  background: #fff;
+  padding: 25px 30px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  border-radius: 8px;
 }
 
 h1, h2, h3 {
-  color: #ffffff;
-  margin-bottom: 10px;
+  color: #2c3e50;
 }
 
-label {
+h1 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+form label {
   display: block;
-  margin: 15px 0 5px;
+  margin-top: 15px;
   font-weight: bold;
 }
 
-input[type="text"],
-input[type="number"],
-input[type="date"],
-textarea {
+form input[type="text"],
+form input[type="number"],
+form input[type="date"],
+form textarea {
   width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  background: #1e1e1e;
-  color: #ffffff;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  resize: vertical;
 }
 
-textarea {
-  resize: vertical;
-  min-height: 60px;
+form textarea {
+  min-height: 80px;
 }
 
 button {
-  margin-top: 15px;
-  padding: 10px 20px;
-  background: #6a1b9a;
-  border: none;
-  border-radius: 5px;
+  margin-top: 20px;
+  padding: 12px 18px;
+  font-size: 1rem;
+  background-color: #2c3e50;
   color: white;
-  font-weight: bold;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background: #8e24aa;
+  background-color: #34495e;
 }
 
 .hidden {
   display: none;
 }
 
-input[readonly] {
-  background: #333;
-  cursor: default;
-}
-
 .error {
-  color: #ff5252;
-  margin-top: 10px;
-}
-
-#votingFormContainer {
-  margin-top: 20px;
+  color: #c0392b;
+  margin-top: 8px;
+  font-weight: bold;
 }
 
 .vote-category {
   margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #333;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ddd;
 }
 
 .vote-category label {
-  margin: 5px 0;
+  margin-right: 8px;
 }
 
-.result-entry {
-  margin: 10px 0;
-  padding: 10px;
-  background: #1e1e1e;
-  border-radius: 5px;
+input[type="text"][data-gen] {
+  width: 48%;
+  margin-right: 4%;
+  display: inline-block;
 }
 
-.result-entry strong {
-  color: #90caf9;
+input[type="text"][data-gen]:last-child {
+  margin-right: 0;
+}
+
+#resultSection table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+#resultSection th, #resultSection td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+#resultSection th {
+  background-color: #34495e;
+  color: white;
+}
+
+#resultSection td {
+  background-color: #ecf0f1;
+}
+
+#hostLinkSection input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background-color: #f1f1f1;
+}
+
+#countdownTimer {
+  font-weight: bold;
+  color: #2980b9;
 }
