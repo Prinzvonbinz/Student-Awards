@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student-Awards 2025</title>
+  <title>Student-Awards Host Setup</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <div class="container">
-    <h1 id="mainTitle">Student-Awards</h1>
+    <h1>Student-Awards Host Setup</h1>
 
-    <!-- Host Setup -->
     <section id="hostSetupSection">
       <h2>Host Setup</h2>
       <form id="hostSetupForm">
@@ -22,7 +20,7 @@
         <input type="text" id="className" name="className" placeholder="z.B. 10B" required />
 
         <label for="categories">Kategorien (Kommagetrennt):</label>
-        <textarea id="categories" name="categories" placeholder="Sportlichste Person, Kreativster Kopf, ... " required></textarea>
+        <textarea id="categories" name="categories" placeholder="Sportlichste Person, Kreativster Kopf, ..." required></textarea>
 
         <label for="students">Schülernamen mit Geschlecht (je Zeile: Name, m/w):</label>
         <textarea id="students" name="students" placeholder="Max Mustermann, m&#10;Lisa Beispiel, w" required></textarea>
@@ -41,12 +39,8 @@
       </div>
     </section>
 
-    <!-- Teilnehmer Login -->
-    <section id="participantLoginSection" class="hidden">
+    <section id="participantLoginSection">
       <h2>Teilnehmer Login</h2>
-      <label for="participantLink">Hier den Link eingeben:</label>
-      <input type="text" id="participantLink" placeholder="Link hier einfügen" />
-
       <label for="participantCode">5-stelliger Zugangscode:</label>
       <input type="text" id="participantCode" maxlength="5" placeholder="Code hier eingeben" />
 
@@ -54,28 +48,6 @@
 
       <p id="loginError" class="error"></p>
     </section>
-
-    <!-- Abstimmung -->
-    <section id="votingSection" class="hidden">
-      <h2 id="votingTitle"></h2>
-      <p>Wähle für jede Kategorie einen Namen für Junge und einen für Mädchen aus oder trage "-" ein, wenn keine Stimme vergeben wird.</p>
-      <div id="votingForm"></div>
-    </section>
-
-    <!-- Warteschleife (Countdown) -->
-    <section id="waitingSection" class="hidden">
-      <h2>Abstimmung abgeschlossen</h2>
-      <p>Warte auf das Ergebnis. Es wird angezeigt am <span id="resultDateDisplay"></span></p>
-      <p>Countdown: <span id="countdownTimer"></span></p>
-    </section>
-
-    <!-- Ergebnisse -->
-    <section id="resultsSection" class="hidden">
-      <h2>Ergebnisse</h2>
-      <div id="resultSection"></div>
-      <button id="resetBtn">Neues Jahr / Zurück zum Setup</button>
-    </section>
-
   </div>
 
   <script src="main.js"></script>
