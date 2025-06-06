@@ -5,44 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student-Awards 2025</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    .container {
-      max-width: 700px;
-      margin: 20px auto;
-      font-family: Arial, sans-serif;
-    }
-    .vote-category {
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-    }
-    .vote-category label {
-      width: 30%;
-      font-weight: bold;
-    }
-    .vote-category input {
-      width: 30%;
-      margin-right: 10px;
-      padding: 5px;
-      box-sizing: border-box;
-    }
-    button {
-      padding: 10px 15px;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    .hidden {
-      display: none;
-    }
-    .error {
-      color: red;
-    }
-  </style>
 </head>
 <body>
 
   <div class="container">
-
     <h1 id="mainTitle">Student-Awards</h1>
 
     <!-- Host Setup -->
@@ -56,7 +22,7 @@
         <input type="text" id="className" name="className" placeholder="z.B. 10B" required />
 
         <label for="categories">Kategorien (Kommagetrennt):</label>
-        <textarea id="categories" name="categories" placeholder="Sportlichste Person, Kreativster Kopf, ..." required></textarea>
+        <textarea id="categories" name="categories" placeholder="Sportlichste Person, Kreativster Kopf, ... " required></textarea>
 
         <label for="students">Schülernamen mit Geschlecht (je Zeile: Name, m/w):</label>
         <textarea id="students" name="students" placeholder="Max Mustermann, m&#10;Lisa Beispiel, w" required></textarea>
@@ -91,12 +57,9 @@
 
     <!-- Abstimmung -->
     <section id="votingSection" class="hidden">
-      <h2>Abstimmung</h2>
-      <form id="voteForm">
-        <div id="categoriesContainer"></div>
-        <button type="submit">Abstimmung absenden</button>
-      </form>
-      <div id="voteResult"></div>
+      <h2 id="votingTitle"></h2>
+      <p>Wähle für jede Kategorie einen Namen für Junge und einen für Mädchen aus oder trage "-" ein, wenn keine Stimme vergeben wird.</p>
+      <div id="votingForm"></div>
     </section>
 
     <!-- Warteschleife (Countdown) -->
