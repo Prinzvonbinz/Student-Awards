@@ -2,74 +2,117 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Student Awards - Setup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student-Awards 2025</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    body {
+    .container {
+      max-width: 700px;
+      margin: 20px auto;
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background: #f4f4f4;
-      border-radius: 8px;
     }
-    label {
-      display: block;
-      margin-top: 1rem;
+    .vote-category {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+    }
+    .vote-category label {
+      width: 30%;
       font-weight: bold;
     }
-    input, textarea {
-      width: 100%;
-      padding: 0.4rem;
-      margin-top: 0.3rem;
+    .vote-category input {
+      width: 30%;
+      margin-right: 10px;
+      padding: 5px;
       box-sizing: border-box;
-      font-size: 1rem;
     }
     button {
-      margin-top: 1.5rem;
-      padding: 0.6rem 1rem;
-      font-size: 1.1rem;
+      padding: 10px 15px;
+      font-size: 1em;
       cursor: pointer;
     }
-    #hostLinkSection {
-      margin-top: 2rem;
-      padding: 1rem;
-      background: #d9f7be;
-      border-radius: 5px;
-      word-break: break-word;
+    .hidden {
+      display: none;
     }
-    #generatedLink {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
+    .error {
+      color: red;
     }
   </style>
 </head>
 <body>
-  <h1>Student Awards - Setup</h1>
 
-  <form id="hostSetupForm">
-    <label for="year">Jahr</label>
-    <input id="year" type="number" required min="2000" max="2100" />
+  <div class="container">
 
-    <label for="className">Klassenname</label>
-    <input id="className" type="text" required />
+    <h1 id="mainTitle">Student-Awards</h1>
 
-    <label for="categories">Kategorien (Komma-getrennt)</label>
-    <input id="categories" type="text" required placeholder="z.B. Beste/r Schüler/in, Bester Sportler" />
+    <!-- Host Setup -->
+    <section id="hostSetupSection">
+      <h2>Host Setup</h2>
+      <form id="hostSetupForm">
+        <label for="year">Jahr:</label>
+        <input type="number" id="year" name="year" value="2025" min="2000" max="2100" required />
 
-    <label for="students">Schüler (Name,Geschlecht pro Zeile, z.B. Max,m oder Anna,w)</label>
-    <textarea id="students" rows="6" required placeholder="Max,m&#10;Anna,w&#10;Lena,w"></textarea>
+        <label for="className">Klasse (z.B. 10B):</label>
+        <input type="text" id="className" name="className" placeholder="z.B. 10B" required />
 
-    <label for="endDate">Abstimmungsdeadline</label>
-    <input id="endDate" type="date" required />
+        <label for="categories">Kategorien (Kommagetrennt):</label>
+        <textarea id="categories" name="categories" placeholder="Sportlichste Person, Kreativster Kopf, ..." required></textarea>
 
-    <button type="submit">Tabelle erstellen & Link generieren</button>
-  </form>
+        <label for="students">Schülernamen mit Geschlecht (je Zeile: Name, m/w):</label>
+        <textarea id="students" name="students" placeholder="Max Mustermann, m&#10;Lisa Beispiel, w" required></textarea>
 
-  <div id="hostLinkSection" style="display:none;">
-    <p><strong>Link zum Teilen:</strong></p>
-    <input type="text" id="generatedLink" readonly />
-    <p><strong>Zugangscode:</strong> <span id="accessCode"></span></p>
+        <label for="endDate">Abgabedatum:</label>
+        <input type="date" id="endDate" name="endDate" required />
+
+        <button type="submit">Tabelle erstellen & Link generieren</button>
+      </form>
+
+      <div id="hostLinkSection" class="hidden">
+        <h3>Link zur Teilnahme</h3>
+        <input type="text" id="generatedLink" readonly />
+        <p>5-stelliger Zugangscode: <strong id="accessCode"></strong></p>
+        <p><small>Code & Link mit Mitschülern teilen, damit sie abstimmen können.</small></p>
+      </div>
+    </section>
+
+    <!-- Teilnehmer Login -->
+    <section id="participantLoginSection" class="hidden">
+      <h2>Teilnehmer Login</h2>
+      <label for="participantLink">Hier den Link eingeben:</label>
+      <input type="text" id="participantLink" placeholder="Link hier einfügen" />
+
+      <label for="participantCode">5-stelliger Zugangscode:</label>
+      <input type="text" id="participantCode" maxlength="5" placeholder="Code hier eingeben" />
+
+      <button id="participantLoginBtn">An Abstimmung teilnehmen</button>
+
+      <p id="loginError" class="error"></p>
+    </section>
+
+    <!-- Abstimmung -->
+    <section id="votingSection" class="hidden">
+      <h2>Abstimmung</h2>
+      <form id="voteForm">
+        <div id="categoriesContainer"></div>
+        <button type="submit">Abstimmung absenden</button>
+      </form>
+      <div id="voteResult"></div>
+    </section>
+
+    <!-- Warteschleife (Countdown) -->
+    <section id="waitingSection" class="hidden">
+      <h2>Abstimmung abgeschlossen</h2>
+      <p>Warte auf das Ergebnis. Es wird angezeigt am <span id="resultDateDisplay"></span></p>
+      <p>Countdown: <span id="countdownTimer"></span></p>
+    </section>
+
+    <!-- Ergebnisse -->
+    <section id="resultsSection" class="hidden">
+      <h2>Ergebnisse</h2>
+      <div id="resultSection"></div>
+      <button id="resetBtn">Neues Jahr / Zurück zum Setup</button>
+    </section>
+
   </div>
 
   <script src="main.js"></script>
