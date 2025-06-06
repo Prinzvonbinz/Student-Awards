@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student-Awards Abstimmung</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Student-Awards Abstimmung</h1>
+
+    <section id="votingSection" class="hidden">
+      <h2>Abstimmung</h2>
+      <p>Für jede Kategorie bitte je einen Jungen und ein Mädchen auswählen oder "-" eintragen.</p>
+      <form id="votingForm"></form>
+      <button id="submitVotesBtn">Abgeben</button>
+      <p id="voteMessage" class="error"></p>
+    </section>
+
+    <section id="waitingSection" class="hidden">
+      <h2>Abstimmung abgeschlossen</h2>
+      <p>Warte auf das Ergebnis. Es wird angezeigt am <span id="resultDateDisplay"></span></p>
+      <p>Countdown: <span id="countdownTimer"></span></p>
+    </section>
+
+    <section id="resultsSection" class="hidden">
+      <h2>Ergebnisse</h2>
+      <div id="resultSection"></div>
+    </section>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
