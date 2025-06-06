@@ -3,51 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student-Awards Host Setup</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Host-Menü - Abstimmung erstellen</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; color: #222; }
+    .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+    input, textarea, button { width: 100%; margin-bottom: 12px; padding: 8px; font-size: 1rem; }
+    label { font-weight: bold; }
+    textarea { height: 120px; font-family: monospace; }
+    .result { background: #eef; padding: 10px; border-radius: 5px; margin-top: 12px; }
+    .error { color: red; }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Student-Awards Host Setup</h1>
+    <h1>Abstimmung erstellen (Host-Menü)</h1>
 
-    <section id="hostSetupSection">
-      <h2>Host Setup</h2>
-      <form id="hostSetupForm">
-        <label for="year">Jahr:</label>
-        <input type="number" id="year" name="year" value="2025" min="2000" max="2100" required />
+    <label for="className">Klasse / Gruppe:</label>
+    <input type="text" id="className" placeholder="z.B. 10a" />
 
-        <label for="className">Klasse (z.B. 10B):</label>
-        <input type="text" id="className" name="className" placeholder="z.B. 10B" required />
+    <label for="categories">Kategorien (je eine pro Zeile):</label>
+    <textarea id="categories" placeholder="Kategorie 1\nKategorie 2\nKategorie 3"></textarea>
 
-        <label for="categories">Kategorien (Kommagetrennt):</label>
-        <textarea id="categories" name="categories" placeholder="Sportlichste Person, Kreativster Kopf, ..." required></textarea>
+    <label for="students">Schülerliste (je Zeile: Name, Geschlecht (m/w)):</label>
+    <textarea id="students" placeholder="Max Mustermann,m\nAnna Beispiel,w"></textarea>
 
-        <label for="students">Schülernamen mit Geschlecht (je Zeile: Name, m/w):</label>
-        <textarea id="students" name="students" placeholder="Max Mustermann, m&#10;Lisa Beispiel, w" required></textarea>
+    <label for="deadline">Abstimmungs-Deadline (Datum):</label>
+    <input type="date" id="deadline" />
 
-        <label for="endDate">Abgabedatum:</label>
-        <input type="date" id="endDate" name="endDate" required />
+    <button id="createTableBtn">Tabelle erstellen & Link generieren</button>
 
-        <button type="submit">Tabelle erstellen & Link generieren</button>
-      </form>
-
-      <div id="hostLinkSection" class="hidden">
-        <h3>Link zur Teilnahme</h3>
-        <input type="text" id="generatedLink" readonly />
-        <p>5-stelliger Zugangscode: <strong id="accessCode"></strong></p>
-        <p><small>Code & Link mit Mitschülern teilen, damit sie abstimmen können.</small></p>
-      </div>
-    </section>
-
-    <section id="participantLoginSection">
-      <h2>Teilnehmer Login</h2>
-      <label for="participantCode">5-stelliger Zugangscode:</label>
-      <input type="text" id="participantCode" maxlength="5" placeholder="Code hier eingeben" />
-
-      <button id="participantLoginBtn">An Abstimmung teilnehmen</button>
-
-      <p id="loginError" class="error"></p>
-    </section>
+    <div id="resultSection" class="result" style="display:none;"></div>
   </div>
 
   <script src="main.js"></script>
