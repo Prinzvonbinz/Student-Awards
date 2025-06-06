@@ -1,47 +1,39 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Host-Menü - Schüler-Auszeichnung</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Schüler-Auszeichnung – Host</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Schüler-Auszeichnung - Host-Menü</h1>
+  <div class="container">
+    <h1>Schüler-Auszeichnung – Host-Menü</h1>
+    
+    <label>Jahrgang:</label>
+    <input type="text" id="year" placeholder="z.B. 2025"><br>
+    
+    <label>Klasse:</label>
+    <input type="text" id="class" placeholder="z.B. 10A"><br>
+    
+    <label>Kategorien (kommagetrennt):</label>
+    <input type="text" id="categories" placeholder="z.B. Sportlichster, Lustigste"><br>
+    
+    <label>Schülerliste (Name, Geschlecht pro Zeile, m/w):</label><br>
+    <textarea id="students" placeholder="Max,m&#10;Lisa,w" rows="5"></textarea><br>
 
-  <section id="setup-section">
-    <h2>Setup der Auszeichnung</h2>
-    <label for="year">Jahr:</label>
-    <input type="number" id="year" placeholder="z.B. 2025" min="2000" max="2100" required /><br/>
+    <label>Abgabedatum:</label>
+    <input type="date" id="deadline"><br>
 
-    <label for="className">Klasse:</label>
-    <input type="text" id="className" placeholder="z.B. 10B" required /><br/>
+    <button onclick="generateTable()">Tabelle erstellen & Link generieren</button>
+    <button onclick="resetAll()">Zurücksetzen</button>
 
-    <label for="categories">Kategorien (Kommagetrennt):</label>
-    <input type="text" id="categories" placeholder="z.B. Sportlichste Person, Kreativster Kopf" required /><br/>
+    <div id="linkSection" style="margin-top:20px; display:none;">
+      <p><strong>Code:</strong> <span id="codeDisplay"></span></p>
+      <p><strong>Link zur Abstimmung:</strong> <a href="#" id="voteLink" target="_blank"></a></p>
+    </div>
 
-    <label for="students">Schüler (Name, Geschlecht 'm' oder 'w' pro Zeile, z.B. Max,m):</label><br/>
-    <textarea id="students" placeholder="Max,m&#10;Anna,w" rows="8" required></textarea><br/>
-
-    <label for="deadline">Abgabedatum (Ergebnisse ab dann sichtbar):</label>
-    <input type="date" id="deadline" required /><br/>
-
-    <button id="createTableBtn">Tabelle erstellen & Link generieren</button>
-  </section>
-
-  <section id="result-section" style="display:none;">
-    <h2>Teilnahme-Link & Code</h2>
-    <p>Teilnahmelink:</p>
-    <a id="participationLink" href="#" target="_blank"></a><br/>
-    <p>Zugangscode: <strong id="accessCode"></strong></p>
-    <button id="resetBtn">Neu starten / Reset</button>
-  </section>
-
-  <section id="results-section" style="display:none;">
-    <h2>Ergebnisse</h2>
-    <div id="resultsContent"></div>
-  </section>
-
-<script src="main.js"></script>
+    <div id="resultSection" style="margin-top:30px;"></div>
+  </div>
+  <script src="main.js"></script>
 </body>
 </html>
