@@ -1,164 +1,215 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Abstimmung</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student Awards - Abstimmung</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 2rem auto; padding: 1rem; background: #fafafa; }
+  h1 { text-align: center; }
+  #error { color: red; text-align: center; margin-bottom: 1rem; }
+  #votingTable { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+  #votingTable th, #votingTable td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; cursor: pointer; }
+  #votingTable th { background: #ddd; }
+  #votingTable td.selected { background-color: #8fd18f; }
+  #votingTable td.abstain { background-color: #f0a0a0; }
+  #submitBtn { margin-top: 1.5rem; padding: 0.8rem 1.5rem; font-size: 1.1rem; cursor: pointer; display: block; margin-left: auto; margin-right: auto; }
+  #thankyou { text-align: center; font-size: 1.2rem; color: green; margin-top: 1.5rem; }
+</style>
 </head>
 <body>
-  <h1>Student Awards - Abstimmung</h1>
 
-  <div id="vote-container" style="display:none;">
-    <table id="vote-table" border="1" cellspacing="0" cellpadding="5">
-      <thead>
-        <tr>
-          <th>Kategorie</th>
-          <th>Junge</th>
-          <th>Mädchen</th>
-        </tr>
-      </thead>
-      <tbody id="vote-tbody"></tbody>
-    </table>
-    <button id="submit-vote">Abgeben</button>
-  </div>
+<h1>Student Awards - Abstimmung</h1>
+<div id="error"></div>
 
-  <div id="message" style="margin-top:20px;"></div>
+<div id="voteSection" style="display:none;">
+  <table id="votingTable">
+    <thead>
+      <tr>
+        <th>Kategorie</th>
+        <th>Junge</th>
+        <th>Mädchen</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <!-- Dynamisch befüllt -->
+    </tbody>
+  </table>
 
-  <script src="main.js"></script>
-  <script>
-    // Beim Laden der Seite:
-    document.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
+  <button id="submitBtn">Abgeben</button>
+</div>
 
-      if (!code) {
-        document.getElementById('message').textContent = 'Kein Code angegeben.';
-        return;
-      }
+<div id="thankyou" style="display:none;">Vielen Dank für deine Teilnahme! Du kannst nicht nochmal abstimmen.</div>
 
-      // Versuche Daten aus localStorage zu laden
-      const dataJSON = localStorage.getItem(code);
-      if (!dataJSON) {
-        document.getElementById('message').textContent = 'Ungültiger oder unbekannter Code.';
-        return;
-      }
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
 
-      const data = JSON.parse(dataJSON);
+  const errorDiv = document.getElementById('error');
+  const voteSection = document.getElementById('voteSection');
+  const thankYouDiv = document.getElementById('thankyou');
+  const submitBtn = document.getElementById('submitBtn');
+  const tableBody = document.getElementById('tableBody');
 
-      // Prüfen, ob schon abgestimmt wurde (pro localStorage key: 'voted_'+code)
-      if (localStorage.getItem('voted_' + code)) {
-        document.getElementById('message').textContent = 'Du hast bereits abgestimmt. Vielen Dank!';
-        return;
-      }
+  if (!code) {
+    errorDiv.textContent = 'Ungültiger Code! Bitte mit gültigem Link aufrufen.';
+  } else {
+    const rawData = localStorage.getItem(code);
+    if (!rawData) {
+      errorDiv.textContent = 'Ungültiger Code oder keine Daten gefunden.';
+    } else {
+      const data = JSON.parse(rawData);
 
-      // Daten für Kategorien, Schüler
-      const categories = data.categories;
-      const students = data.students;
+      // Prüfen, ob User schon abgestimmt hat
+      const userId = localStorage.getItem('voted-' + code);
+      if (userId) {
+        voteSection.style.display = 'none';
+        thankYouDiv.style.display = 'block';
+      } else {
+        voteSection.style.display = 'block';
 
-      // Filter Schüler nach Geschlecht
-      const boys = students.filter(s => s.gender === 'm');
-      const girls = students.filter(s => s.gender === 'w');
+        const categories = data.categories;
+        const students = data.students;
 
-      // Vote-Tabelle füllen
-      const tbody = document.getElementById('vote-tbody');
-      tbody.innerHTML = '';
+        // Jungs und Mädchen getrennt filtern
+        const boys = students.filter(s => s.gender === 'm');
+        const girls = students.filter(s => s.gender === 'w');
 
-      categories.forEach(cat => {
-        const tr = document.createElement('tr');
+        // Wir bauen pro Kategorie eine Zeile mit 3 Spalten: Kategorie, Junge-Auswahl, Mädchen-Auswahl
+        // In jeder Kategorie für Junge/Mädchen kann jeweils genau eine Auswahl getroffen werden (Name) oder enthaltung ('-')
 
-        // Kategorie Name
-        const tdCat = document.createElement('td');
-        tdCat.textContent = cat;
-        tr.appendChild(tdCat);
+        // Struktur der Auswahl: 
+        // Wir speichern ausgewählte Namen je Kategorie und Geschlecht, initial '-' (Enthaltung)
 
-        // Junge Zelle mit Dropdown
-        const tdBoy = document.createElement('td');
-        const selectBoy = document.createElement('select');
-        selectBoy.name = `vote_${cat}_m`;
+        // Damit Mehrfachklicks vermeiden: pro Zelle klicken = Auswahl
 
-        // Option „Enthaltung“ mit "-"
-        const optionSkipBoy = document.createElement('option');
-        optionSkipBoy.value = '-';
-        optionSkipBoy.textContent = '-';
-        selectBoy.appendChild(optionSkipBoy);
+        // Datenstruktur für Auswahl:
+        // selections = { category1: { m: 'Name'/'-', w: 'Name'/'-' }, ... }
 
-        boys.forEach(boy => {
-          const option = document.createElement('option');
-          option.value = boy.name;
-          option.textContent = boy.name;
-          selectBoy.appendChild(option);
-        });
-
-        tdBoy.appendChild(selectBoy);
-        tr.appendChild(tdBoy);
-
-        // Mädchen Zelle mit Dropdown
-        const tdGirl = document.createElement('td');
-        const selectGirl = document.createElement('select');
-        selectGirl.name = `vote_${cat}_w`;
-
-        const optionSkipGirl = document.createElement('option');
-        optionSkipGirl.value = '-';
-        optionSkipGirl.textContent = '-';
-        selectGirl.appendChild(optionSkipGirl);
-
-        girls.forEach(girl => {
-          const option = document.createElement('option');
-          option.value = girl.name;
-          option.textContent = girl.name;
-          selectGirl.appendChild(option);
-        });
-
-        tdGirl.appendChild(selectGirl);
-        tr.appendChild(tdGirl);
-
-        tbody.appendChild(tr);
-      });
-
-      document.getElementById('vote-container').style.display = 'block';
-
-      // Submit Button Event
-      document.getElementById('submit-vote').addEventListener('click', () => {
-        const votes = {};
-        let allFilled = true;
-
-        // Pro Kategorie und Geschlecht Wert auslesen
+        const selections = {};
         categories.forEach(cat => {
-          const boySelect = document.querySelector(`select[name="vote_${cat}_m"]`);
-          const girlSelect = document.querySelector(`select[name="vote_${cat}_w"]`);
-          if (!boySelect || !girlSelect) {
-            allFilled = false;
+          selections[cat] = { m: '-', w: '-' };
+        });
+
+        function createCell(category, gender, names) {
+          const td = document.createElement('td');
+
+          // Container div für Auswahlmöglichkeiten
+          const container = document.createElement('div');
+          container.style.display = 'flex';
+          container.style.flexDirection = 'column';
+          container.style.alignItems = 'center';
+          container.style.justifyContent = 'center';
+          container.style.gap = '4px';
+
+          // Abstinenz-Button
+          const abstainBtn = document.createElement('button');
+          abstainBtn.textContent = '-';
+          abstainBtn.style.width = '100%';
+          abstainBtn.style.padding = '2px 4px';
+          abstainBtn.style.cursor = 'pointer';
+          abstainBtn.classList.add('abstain');
+          abstainBtn.addEventListener('click', () => {
+            selections[category][gender] = '-';
+            updateTableHighlights();
+          });
+          container.appendChild(abstainBtn);
+
+          // Für jeden Namen Button erstellen
+          names.forEach(nameObj => {
+            const btn = document.createElement('button');
+            btn.textContent = nameObj.name;
+            btn.style.width = '100%';
+            btn.style.padding = '2px 4px';
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', () => {
+              selections[category][gender] = nameObj.name;
+              updateTableHighlights();
+            });
+            container.appendChild(btn);
+          });
+
+          td.appendChild(container);
+          return td;
+        }
+
+        function updateTableHighlights() {
+          // Gehe durch alle Zeilen und zelle die ausgewählte Buttons hervor
+          for(let r=0; r < tableBody.rows.length; r++) {
+            const row = tableBody.rows[r];
+            const cat = row.cells[0].textContent;
+            ['m','w'].forEach((gender, idx) => {
+              const cell = row.cells[idx +1];
+              const buttons = cell.querySelectorAll('button');
+              buttons.forEach(btn => {
+                btn.classList.remove('selected');
+              });
+              // Markiere den ausgewählten Button
+              const sel = selections[cat][gender];
+              buttons.forEach(btn => {
+                if(btn.textContent === sel) {
+                  btn.classList.add('selected');
+                }
+              });
+            });
+          }
+        }
+
+        // Tabelle füllen
+        categories.forEach(category => {
+          const tr = document.createElement('tr');
+          const catCell = document.createElement('td');
+          catCell.textContent = category;
+          tr.appendChild(catCell);
+
+          tr.appendChild(createCell(category, 'm', boys));
+          tr.appendChild(createCell(category, 'w', girls));
+
+          tableBody.appendChild(tr);
+        });
+
+        updateTableHighlights();
+
+        // Submit Handler
+        submitBtn.addEventListener('click', () => {
+          // Prüfen, ob für alle Kategorien in beiden Geschlechtern was ausgewählt wurde (auch '-' zählt)
+          let allSet = true;
+          for(const cat of categories) {
+            if(!selections[cat].m) allSet = false;
+            if(!selections[cat].w) allSet = false;
+          }
+          if(!allSet) {
+            alert('Bitte in allen Kategorien bei Jungen und Mädchen eine Auswahl treffen (auch Enthaltung möglich).');
             return;
           }
 
-          if (!boySelect.value) allFilled = false;
-          if (!girlSelect.value) allFilled = false;
+          // Votes speichern: für jede Kategorie und Geschlecht wird der Name gezählt (ausgenommen '-')
+          // votes Struktur: { category: { m: {name: count}, w: {name: count} } }
+          if(!data.votes) data.votes = {};
+          categories.forEach(cat => {
+            if(!data.votes[cat]) data.votes[cat] = { m: {}, w: {} };
+            ['m','w'].forEach(g => {
+              const choice = selections[cat][g];
+              if(choice !== '-') {
+                if(!data.votes[cat][g][choice]) data.votes[cat][g][choice] = 0;
+                data.votes[cat][g][choice]++;
+              }
+            });
+          });
 
-          votes[`${cat}_m`] = boySelect.value;
-          votes[`${cat}_w`] = girlSelect.value;
+          // Markiere diesen Client als abgestimmt
+          localStorage.setItem('voted-' + code, 'true');
+
+          // Votes aktualisieren
+          localStorage.setItem(code, JSON.stringify(data));
+
+          voteSection.style.display = 'none';
+          thankYouDiv.style.display = 'block';
         });
+      }
+    }
+  }
+</script>
 
-        if (!allFilled) {
-          alert('Bitte alle Felder ausfüllen oder "-" für Enthaltung wählen.');
-          return;
-        }
-
-        // Speichere Stimmen im localStorage: key = 'votes_' + code + '_' + random voter id
-        // Voter id hier anonym: random 8-stellig
-        const voterId = Math.random().toString(36).substr(2,8);
-
-        const votesKey = `votes_${code}_${voterId}`;
-        localStorage.setItem(votesKey, JSON.stringify(votes));
-
-        // Markiere als abgestimmt
-        localStorage.setItem('voted_' + code, 'true');
-
-        // Danke Nachricht anzeigen
-        document.getElementById('vote-container').style.display = 'none';
-        document.getElementById('message').textContent = 'Danke für deine Abstimmung!';
-      });
-    });
-  </script>
 </body>
 </html>
