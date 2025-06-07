@@ -4,43 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Awards - Ergebnisse</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
-    h1 { margin-bottom: 20px; }
-    table { border-collapse: collapse; width: 100%; max-width: 900px; margin-bottom: 30px; }
-    th, td { border: 1px solid #555; padding: 10px; text-align: center; }
-    th { background: #333; }
-    .winner { background: #4caf50; color: white; font-weight: bold; }
-    .tie { background: #ffa726; color: black; }
-    #codeInput, #loadBtn { padding: 8px; border-radius: 4px; border: none; background: #222; color: #eee; margin-right: 10px; }
-    #loadBtn { background: #4caf50; cursor: pointer; }
-    #loadBtn:hover { background: #45a049; }
-    #errorMsg { color: #f44336; margin-top: 10px; }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Student Awards - Ergebnisse (Host)</h1>
-
-  <label for="codeInput">Bitte deinen 5-stelligen Code eingeben:</label>
-  <input type="text" id="codeInput" maxlength="5" autocomplete="off" />
+  <h1>Student Awards - Ergebnisse</h1>
+  <label for="codeInput">Bitte Host-Code eingeben:</label>
+  <input type="text" id="codeInput" maxlength="5" />
   <button id="loadBtn">Ergebnisse laden</button>
-  <div id="errorMsg"></div>
-
-  <div id="resultsContainer" style="display:none;">
-    <h2 id="sessionInfo"></h2>
-    <div id="resultsTables"></div>
-  </div>
+  <p>Abstimmende: <span id="votersCount">0</span></p>
+  <p id="deadlineInfo"></p>
+  <div id="winners"></div>
 
   <script src="main.js"></script>
-  <script>
-    document.getElementById('loadBtn').addEventListener('click', () => {
-      const code = document.getElementById('codeInput').value.trim().toUpperCase();
-      if (!code) {
-        alert("Bitte gib einen gültigen Code ein.");
-        return;
-      }
-      loadResults(code);
-    });
-  </script>
 </body>
 </html>
