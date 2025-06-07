@@ -1,311 +1,202 @@
-// main.js - Teil 1: Host Setup und Link-Generierung
+// --- Globale Variablen ---
+const hostDiv = document.getElementById('hostDiv');
+const voteDiv = document.getElementById('voteDiv');
+const codeInput = document.getElementById('codeInput');
+const loginBtn = document.getElementById('loginBtn');
+const loginMessage = document.getElementById('loginMessage');
+const categoriesContainer = document.getElementById('categoriesContainer');
+const voteForm = document.getElementById('voteForm');
+const voteMessage = document.getElementById('voteMessage');
+const generateBtn = document.getElementById('generateBtn');
+const linkOutput = document.getElementById('linkOutput');
+const codeOutput = document.getElementById('codeOutput');
 
-// Hilfsfunktion: 5-stelliger Code (Zahlen + Großbuchstaben)
-function generateAccessCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 5; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
+let categoriesData = null;
+let sessionCode = null;
+let votesSubmitted = false;
 
-// Formular-Handling
-document.getElementById('hostForm').addEventListener('submit', function(e) {
-  e.preventDefault();
+// --- HOST-SEITE (index.html) ---
+if (hostDiv) {
+  generateBtn.addEventListener('click', () => {
+    loginMessage.textContent = '';
+    voteMessage.textContent = '';
+    linkOutput.textContent = '';
+    codeOutput.textContent = '';
 
-  // Eingabewerte holen
-  const year = document.getElementById('year').value.trim();
-  const className = document.getElementById('className').value.trim();
-  const categoriesRaw = document.getElementById('categories').value.trim();
-  const studentsRaw = document.getElementById('students').value.trim();
-  const deadline = document.getElementById('deadline').value;
-
-  if (!year || !className || !categoriesRaw || !studentsRaw || !deadline) {
-    alert('Bitte alle Felder korrekt ausfüllen!');
-    return;
-  }
-
-  // Kategorien in Array splitten (Komma-getrennt)
-  const categories = categoriesRaw.split(',').map(c => c.trim()).filter(c => c.length > 0);
-  if (categories.length === 0) {
-    alert('Bitte mindestens eine Kategorie angeben.');
-    return;
-  }
-
-  // Schüler parsen: Jede Zeile = "Name, m" oder "Name, w"
-  const studentLines = studentsRaw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const students = [];
-  for (const line of studentLines) {
-    const parts = line.split(',');
-    if (parts.length !== 2) {
-      alert('Schüler müssen im Format "Name, m" oder "Name, w" angegeben werden, eine pro Zeile.');
-      return;
-    }
-    const name = parts[0].trim();
-    const gender = parts[1].trim().toLowerCase();
-    if (!name || (gender !== 'm' && gender !== 'w')) {
-      alert('Schüler müssen im Format "Name, m" oder "Name, w" angegeben werden, eine pro Zeile.');
-      return;
-    }
-    students.push({ name, gender });
-  }
-  if (students.length === 0) {
-    alert('Bitte mindestens einen Schüler angeben.');
-    return;
-  }
-
-  // Access Code generieren
-  const accessCode = generateAccessCode();
-
-  // Alle Daten zusammenpacken
-  const data = {
-    year,
-    className,
-    categories,
-    students,
-    deadline,
-    accessCode,
-    votes: {} // Start leer
-  };
-
-  // Daten in localStorage speichern (Key: "studentAwards_{Code}")
-  localStorage.setItem('studentAwards_' + accessCode, JSON.stringify(data));
-
-  // Link zusammenbauen (zur vote.html mit Code als URL-Parameter)
-  const baseUrl = location.origin + location.pathname.replace(/\/[^/]*$/, '/') + 'vote.html';
-  const participationLink = `${baseUrl}?code=${accessCode}`;
-
-  // Ausgabe anzeigen
-  document.getElementById('participationLink').value = participationLink;
-  document.getElementById('accessCode').textContent = accessCode;
-  document.getElementById('output').style.display = 'block';
-
-  // Formular ausblenden (optional)
-  this.style.display = 'none';
-});
-// main.js - Teil 2: Teilnehmer Login & Abstimmung
-
-// Hilfsfunktion zum Lesen von URL-Parametern
-function getUrlParameter(name) {
-  const params = new URLSearchParams(window.location.search);
-  return params.get(name);
-}
-
-// Global
-let currentData = null;
-let currentCode = null;
-let currentStudent = null;
-
-// Seite initialisieren
-window.addEventListener('DOMContentLoaded', () => {
-  currentCode = getUrlParameter('code');
-  if (!currentCode) {
-    alert('Kein Zugangscode gefunden. Bitte mit gültigem Link aufrufen.');
-    return;
-  }
-
-  // Daten aus localStorage laden
-  const stored = localStorage.getItem('studentAwards_' + currentCode);
-  if (!stored) {
-    alert('Ungültiger oder abgelaufener Zugangscode.');
-    return;
-  }
-  currentData = JSON.parse(stored);
-
-  showLoginForm();
-});
-
-// Loginformular anzeigen
-function showLoginForm() {
-  const loginDiv = document.getElementById('loginDiv');
-  loginDiv.style.display = 'block';
-
-  // Login-Button Event
-  document.getElementById('loginBtn').addEventListener('click', () => {
-    const inputName = document.getElementById('studentName').value.trim();
-    if (!inputName) {
-      alert('Bitte deinen Namen eingeben.');
+    // Kategorien aus Textarea auslesen & parsen
+    const rawText = document.getElementById('categoriesInput').value.trim();
+    if (!rawText) {
+      loginMessage.textContent = 'Bitte Kategorien eingeben.';
       return;
     }
 
-    // Schüler prüfen (exakt match mit Namen, case-insensitive)
-    const found = currentData.students.find(s => s.name.toLowerCase() === inputName.toLowerCase());
-    if (!found) {
-      alert('Name nicht gefunden. Bitte überprüfe die Schreibweise.');
-      return;
-    }
-
-    currentStudent = found;
-    loginDiv.style.display = 'none';
-    showVoteForm();
-  });
-}
-
-// Abstimmungsformular anzeigen
-function showVoteForm() {
-  const voteDiv = document.getElementById('voteDiv');
-  voteDiv.style.display = 'block';
-
-  // Kategorien links, daneben je zwei Eingabefelder: Junge / Mädchen (für jeden Kategorie je Name)
-  const container = document.getElementById('categoriesContainer');
-  container.innerHTML = '';
-
-  currentData.categories.forEach(category => {
-    const catRow = document.createElement('div');
-    catRow.className = 'category-row';
-
-    // Kategorie Name
-    const catName = document.createElement('div');
-    catName.textContent = category;
-    catName.className = 'category-name';
-    catRow.appendChild(catName);
-
-    // Eingabefeld Junge
-    const inputBoy = document.createElement('input');
-    inputBoy.type = 'text';
-    inputBoy.placeholder = 'Jungenname';
-    inputBoy.className = 'input-boy';
-    inputBoy.name = `boy_${category}`;
-    catRow.appendChild(inputBoy);
-
-    // Eingabefeld Mädchen
-    const inputGirl = document.createElement('input');
-    inputGirl.type = 'text';
-    inputGirl.placeholder = 'Mädchenname';
-    inputGirl.className = 'input-girl';
-    inputGirl.name = `girl_${category}`;
-    catRow.appendChild(inputGirl);
-
-    container.appendChild(catRow);
-  });
-
-  // Abstimmungs-Button
-  document.getElementById('submitVoteBtn').addEventListener('click', submitVote);
-}
-
-// Vote absenden und speichern
-function submitVote() {
-  // Für jede Kategorie: Werte prüfen
-  const votes = {};
-  let valid = true;
-  let msg = '';
-
-  for (const category of currentData.categories) {
-    const boyInput = document.querySelector(`input[name="boy_${category}"]`).value.trim();
-    const girlInput = document.querySelector(`input[name="girl_${category}"]`).value.trim();
-
-    // Prüfen: Namen müssen in currentData.students vorhanden sein, mit Geschlecht passend
-    const boyValid = currentData.students.some(s => s.name.toLowerCase() === boyInput.toLowerCase() && s.gender === 'm');
-    const girlValid = currentData.students.some(s => s.name.toLowerCase() === girlInput.toLowerCase() && s.gender === 'w');
-
-    if (!boyValid) {
-      valid = false;
-      msg = `Ungültiger Jungenname in Kategorie "${category}"`;
-      break;
-    }
-    if (!girlValid) {
-      valid = false;
-      msg = `Ungültiger Mädchennamen in Kategorie "${category}"`;
-      break;
-    }
-
-    votes[category] = { boy: boyInput, girl: girlInput };
-  }
-
-  if (!valid) {
-    alert(msg);
-    return;
-  }
-
-  // Speichern der Stimmen in currentData.votes unter currentStudent.name
-  currentData.votes[currentStudent.name] = votes;
-
-  // Daten zurück in localStorage speichern
-  localStorage.setItem('studentAwards_' + currentCode, JSON.stringify(currentData));
-
-  alert('Deine Stimmen wurden erfolgreich gespeichert. Danke fürs Mitmachen!');
-
-  // Optional: Seite neu laden oder andere Aktion
-  location.reload();
-}
-// main.js - Teil 3: Ergebnisse auswerten und anzeigen
-
-// Ergebnisse anzeigen (z.B. nach Abstimmung oder als separate Funktion)
-function showResults() {
-  if (!currentData) {
-    alert('Keine Daten geladen.');
-    return;
-  }
-
-  const resultsDiv = document.getElementById('resultsDiv');
-  resultsDiv.style.display = 'block';
-
-  // Stimmen aller Teilnehmer sammeln
-  const votes = currentData.votes; // { TeilnehmerName: {Kategorie: {boy, girl}} }
-
-  // Ergebnis-Objekt aufbauen: pro Kategorie je Junge und Mädchen eine Zählung
-  const tally = {};
-  currentData.categories.forEach(cat => {
-    tally[cat] = { boys: {}, girls: {} };
-  });
-
-  // Stimmen zählen
-  Object.values(votes).forEach(voteSet => {
-    for (const cat in voteSet) {
-      const boyName = voteSet[cat].boy;
-      const girlName = voteSet[cat].girl;
-
-      // Junge zählen
-      if (!tally[cat].boys[boyName]) tally[cat].boys[boyName] = 0;
-      tally[cat].boys[boyName]++;
-
-      // Mädchen zählen
-      if (!tally[cat].girls[girlName]) tally[cat].girls[girlName] = 0;
-      tally[cat].girls[girlName]++;
-    }
-  });
-
-  // Ausgabe erzeugen
-  resultsDiv.innerHTML = '<h2>Ergebnisse</h2>';
-
-  for (const cat of currentData.categories) {
-    const catResult = document.createElement('div');
-    catResult.className = 'category-result';
-
-    const catTitle = document.createElement('h3');
-    catTitle.textContent = cat;
-    catResult.appendChild(catTitle);
-
-    // Jungen Gewinner
-    let maxBoyCount = 0;
-    let winnerBoy = '';
-    for (const boy in tally[cat].boys) {
-      if (tally[cat].boys[boy] > maxBoyCount) {
-        maxBoyCount = tally[cat].boys[boy];
-        winnerBoy = boy;
+    try {
+      // Erwarte JSON-Format: { Kategorie1: { Jungs: [], Mädchen: [] }, Kategorie2: { Jungs: [], Mädchen: [] } ... }
+      const parsed = JSON.parse(rawText);
+      if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Ungültiges Format.');
       }
-    }
-    const boyRes = document.createElement('p');
-    boyRes.textContent = `Jungen-Gewinner: ${winnerBoy} (${maxBoyCount} Stimmen)`;
-    catResult.appendChild(boyRes);
 
-    // Mädchen Gewinner
-    let maxGirlCount = 0;
-    let winnerGirl = '';
-    for (const girl in tally[cat].girls) {
-      if (tally[cat].girls[girl] > maxGirlCount) {
-        maxGirlCount = tally[cat].girls[girl];
-        winnerGirl = girl;
+      // Überprüfe jede Kategorie und die Jungs/Mädchen Arrays
+      for (const cat in parsed) {
+        if (!parsed[cat].Jungs || !parsed[cat].Mädchen) {
+          throw new Error(`Kategorie "${cat}" fehlt Jungs oder Mädchen Arrays.`);
+        }
+        if (!Array.isArray(parsed[cat].Jungs) || !Array.isArray(parsed[cat].Mädchen)) {
+          throw new Error(`Kategorie "${cat}": Jungs und Mädchen müssen Arrays sein.`);
+        }
       }
+      categoriesData = parsed;
+    } catch (e) {
+      loginMessage.textContent = 'Fehler beim Parsen der Kategorien: ' + e.message;
+      return;
     }
-    const girlRes = document.createElement('p');
-    girlRes.textContent = `Mädchen-Gewinner: ${winnerGirl} (${maxGirlCount} Stimmen)`;
-    catResult.appendChild(girlRes);
 
-    resultsDiv.appendChild(catResult);
+    // Generiere Code (6-stellig, alphanumerisch)
+    sessionCode = generateCode(6);
+
+    // Speichere Daten lokal unter dem Code (im localStorage)
+    localStorage.setItem('studentAwards_' + sessionCode, JSON.stringify(categoriesData));
+
+    // Erzeuge Link mit Parameter ?code=SESSIONCODE
+    const baseUrl = window.location.href.split('?')[0].replace('index.html', 'vote.html');
+    const fullLink = `${baseUrl}?code=${sessionCode}`;
+
+    linkOutput.textContent = fullLink;
+    codeOutput.textContent = sessionCode;
+  });
+}
+
+// --- TEILNEHMER-SEITE (vote.html) ---
+if (loginBtn) {
+  loginBtn.addEventListener('click', () => {
+    loginMessage.textContent = '';
+    voteMessage.textContent = '';
+    const code = codeInput.value.trim();
+    if (!code) {
+      loginMessage.textContent = 'Bitte Code eingeben.';
+      return;
+    }
+
+    const stored = localStorage.getItem('studentAwards_' + code);
+    if (!stored) {
+      loginMessage.textContent = 'Ungültiger Code oder keine Daten gefunden.';
+      return;
+    }
+
+    categoriesData = JSON.parse(stored);
+    sessionCode = code;
+
+    // Zeige Abstimmungsformular
+    loginMessage.textContent = '';
+    document.getElementById('loginDiv').style.display = 'none';
+    voteDiv.style.display = 'block';
+
+    buildVoteForm(categoriesData);
+  });
+}
+
+// --- Hilfsfunktion: Code generieren ---
+function generateCode(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i=0; i<length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// --- Abstimmungsformular aufbauen ---
+function buildVoteForm(categories) {
+  categoriesContainer.innerHTML = '';
+  for (const category in categories) {
+    const catDiv = document.createElement('div');
+    catDiv.classList.add('category-group');
+
+    const label = document.createElement('div');
+    label.className = 'category-label';
+    label.textContent = category;
+    catDiv.appendChild(label);
+
+    // Jungs Eingabe
+    const boysDiv = document.createElement('div');
+    boysDiv.className = 'gender-inputs';
+
+    const boyLabel = document.createElement('label');
+    boyLabel.textContent = 'Junge Name:';
+    const boyInput = document.createElement('input');
+    boyInput.type = 'text';
+    boyInput.name = `boy_${category}`;
+    boyInput.placeholder = categories[category].Jungs.join(', ');
+
+    boysDiv.appendChild(boyLabel);
+    boysDiv.appendChild(boyInput);
+    catDiv.appendChild(boysDiv);
+
+    // Mädchen Eingabe
+    const girlsDiv = document.createElement('div');
+    girlsDiv.className = 'gender-inputs';
+
+    const girlLabel = document.createElement('label');
+    girlLabel.textContent = 'Mädchen Name:';
+    const girlInput = document.createElement('input');
+    girlInput.type = 'text';
+    girlInput.name = `girl_${category}`;
+    girlInput.placeholder = categories[category].Mädchen.join(', ');
+
+    girlsDiv.appendChild(girlLabel);
+    girlsDiv.appendChild(girlInput);
+    catDiv.appendChild(girlsDiv);
+
+    categoriesContainer.appendChild(catDiv);
   }
 }
 
-// Beispiel: Funktion aufrufen, wenn auf Ergebnisse-Button geklickt wird
-document.getElementById('showResultsBtn')?.addEventListener('click', showResults);
+// --- Abstimmungsformular absenden ---
+if (voteForm) {
+  voteForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (votesSubmitted) {
+      voteMessage.textContent = 'Du hast bereits abgestimmt.';
+      return;
+    }
+    voteMessage.textContent = '';
+
+    const formData = new FormData(voteForm);
+    const results = {};
+
+    // Validierung der Eingaben gegen KategorienData
+    for (const category in categoriesData) {
+      const boyName = formData.get(`boy_${category}`)?.trim();
+      const girlName = formData.get(`girl_${category}`)?.trim();
+
+      if (!boyName || !girlName) {
+        voteMessage.style.color = 'red';
+        voteMessage.textContent = `Bitte für Kategorie "${category}" beide Namen eingeben.`;
+        return;
+      }
+
+      // Überprüfung: Namen müssen in der ursprünglichen Liste enthalten sein (Groß-/Kleinschreibung ignorieren)
+      if (!categoriesData[category].Jungs.some(n => n.toLowerCase() === boyName.toLowerCase())) {
+        voteMessage.style.color = 'red';
+        voteMessage.textContent = `Jungenname "${boyName}" ist für Kategorie "${category}" ungültig.`;
+        return;
+      }
+      if (!categoriesData[category].Mädchen.some(n => n.toLowerCase() === girlName.toLowerCase())) {
+        voteMessage.style.color = 'red';
+        voteMessage.textContent = `Mädchennamen "${girlName}" ist für Kategorie "${category}" ungültig.`;
+        return;
+      }
+
+      results[category] = { Junge: boyName, Mädchen: girlName };
+    }
+
+    // Hier könnte man die Ergebnisse speichern, z.B. lokal oder an Server (nicht implementiert)
+    votesSubmitted = true;
+    voteMessage.style.color = 'green';
+    voteMessage.textContent = 'Danke für deine Abstimmung!';
+
+    // Optional Formular sperren
+    voteForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
+  });
+}
