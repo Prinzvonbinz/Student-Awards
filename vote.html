@@ -3,29 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Abstimmung</title>
+  <title>Student Awards - Abstimmen</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Student Awards - Abstimmung</h1>
-    <div id="codeInputSection">
-      <label for="voteCode">Geben Sie Ihren 5-stelligen Code ein:</label>
-      <input type="text" id="voteCode" maxlength="5" />
-      <button id="loadVote">Laden</button>
-      <p id="codeError" class="error"></p>
+  <h1>Student Awards - Abstimmen</h1>
+
+  <label>
+    Code eingeben:
+    <input type="text" id="voteCodeInput" maxlength="6" placeholder="6-stelliger Code" />
+    <button id="loadVote">Laden</button>
+  </label>
+  <div id="codeError" class="error"></div>
+
+  <div id="voteSection" style="display:none;">
+    <div id="tabs">
+      <button id="tabBoys" class="active">Junge</button>
+      <button id="tabGirls">Mädchen</button>
     </div>
 
-    <div id="voteSection" style="display:none;">
-      <h2>Bitte stimmen Sie ab</h2>
-      <div>
-        <button id="tabBoys" class="tab active">Junge</button>
-        <button id="tabGirls" class="tab">Mädchen</button>
-      </div>
-      <table id="voteTable"></table>
-      <button id="submitVote" disabled>Abgeben</button>
-      <p id="voteMessage"></p>
-    </div>
+    <table id="voteTable" border="1">
+      <!-- Dynamisch gefüllt -->
+    </table>
+
+    <button id="submitVote">Abgeben</button>
+    <div id="voteMessage"></div>
   </div>
 
   <script src="main.js"></script>
