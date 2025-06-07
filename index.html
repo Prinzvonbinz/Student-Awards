@@ -1,32 +1,42 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Student-Awards Host</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Awards - Host</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 4px; background: #222; border: none; color: #eee; border-radius: 4px; }
+    button { margin-top: 20px; padding: 10px 15px; background: #4caf50; border: none; color: white; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #45a049; }
+    #generatedLink { margin-top: 15px; color: #6ee26e; word-break: break-all; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🎓 Student-Awards – Host-Menü</h1>
-    <label>Jahr:</label>
-    <input type="number" id="year" value="2025"><br>
+  <h1>Student Awards - Host Menü</h1>
+  <form id="hostForm">
+    <label for="year">Jahr (z.B. 2025)</label>
+    <input type="number" id="year" name="year" min="2000" max="2100" required value="2025" />
+    
+    <label for="class">Klasse (z.B. 10b, 8c)</label>
+    <input type="text" id="class" name="class" required placeholder="z.B. 10b" />
+    
+    <label for="categories">Kategorien (kommagetrennt, z.B. Lustig,sportlich)</label>
+    <input type="text" id="categories" name="categories" required placeholder="Lustig, sportlich, musikalisch" />
+    
+    <label for="students">Schüler (je Zeile: Name,m oder Name,w)</label>
+    <textarea id="students" name="students" rows="6" required placeholder="Max,m\nLisa,w\n..." ></textarea>
+    
+    <label for="deadline">Deadline (Datum der Ergebnisanzeige)</label>
+    <input type="date" id="deadline" name="deadline" required />
+    
+    <button type="button" id="setSessionBtn">Einstellen</button>
+  </form>
 
-    <label>Klasse:</label>
-    <input type="text" id="class" placeholder="z. B. 10b"><br>
+  <button type="button" id="createTableBtn" disabled>Tabelle erstellen & Link generieren</button>
 
-    <label>Kategorien (kommagetrennt):</label>
-    <input type="text" id="categories" placeholder="Lustig, Sportlich, ..."><br>
-
-    <label>Schülerliste (Name, m/w pro Zeile):</label>
-    <textarea id="students" rows="10" placeholder="Max, m&#10;Anna, w"></textarea><br>
-
-    <label>Deadline (YYYY-MM-DD):</label>
-    <input type="date" id="deadline"><br>
-
-    <button onclick="createSession()">Tabelle erstellen & Link generieren</button>
-
-    <div id="output" style="margin-top: 20px;"></div>
-  </div>
+  <div id="generatedLink"></div>
 
   <script src="main.js"></script>
 </body>
