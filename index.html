@@ -4,39 +4,39 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Awards - Host</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
-    label { display: block; margin-top: 10px; }
-    input, textarea { width: 100%; padding: 8px; margin-top: 4px; background: #222; border: none; color: #eee; border-radius: 4px; }
-    button { margin-top: 20px; padding: 10px 15px; background: #4caf50; border: none; color: white; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #45a049; }
-    #generatedLink { margin-top: 15px; color: #6ee26e; word-break: break-all; }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h1>Student Awards - Host Menü</h1>
   <form id="hostForm">
-    <label for="year">Jahr (z.B. 2025)</label>
-    <input type="number" id="year" name="year" min="2000" max="2100" required value="2025" />
-    
-    <label for="class">Klasse (z.B. 10b, 8c)</label>
-    <input type="text" id="class" name="class" required placeholder="z.B. 10b" />
-    
-    <label for="categories">Kategorien (kommagetrennt, z.B. Lustig,sportlich)</label>
-    <input type="text" id="categories" name="categories" required placeholder="Lustig, sportlich, musikalisch" />
-    
-    <label for="students">Schüler (je Zeile: Name,m oder Name,w)</label>
-    <textarea id="students" name="students" rows="6" required placeholder="Max,m\nLisa,w\n..." ></textarea>
-    
-    <label for="deadline">Deadline (Datum der Ergebnisanzeige)</label>
+    <label for="year">Jahr:</label>
+    <input type="number" id="year" name="year" min="2025" max="2100" value="2025" required />
+    <br />
+
+    <label for="className">Klasse:</label>
+    <input type="text" id="className" name="className" placeholder="z.B. 10b" required />
+    <br />
+
+    <label for="categories">Kategorien (kommagetrennt):</label>
+    <input type="text" id="categories" name="categories" placeholder="z.B. Lustig, Sportlich" required />
+    <br />
+
+    <label for="students">Schüler (Name, m/w) pro Zeile:</label>
+    <textarea id="students" name="students" rows="10" placeholder="Max Mustermann,m
+Anna Beispiel,w" required></textarea>
+    <br />
+
+    <label for="deadline">Deadline (Ergebnis-Datum):</label>
     <input type="date" id="deadline" name="deadline" required />
-    
-    <button type="button" id="setSessionBtn">Einstellen</button>
+    <br />
+
+    <button type="button" id="setSession">Einstellen</button>
   </form>
 
-  <button type="button" id="createTableBtn" disabled>Tabelle erstellen & Link generieren</button>
+  <hr />
 
-  <div id="generatedLink"></div>
+  <button type="button" id="createTableLink" disabled>Tabelle erstellen & Link generieren</button>
+  <p id="generatedLink"></p>
 
   <script src="main.js"></script>
 </body>
