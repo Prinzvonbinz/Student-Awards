@@ -4,23 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Awards - Abstimmung</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Abstimmung</h1>
-  <label for="codeInput">Bitte Code eingeben:</label>
-  <input type="text" id="codeInput" maxlength="5" />
-  <button id="loadBtn">Laden</button>
-  <hr />
-  <div id="votingArea" style="display:none;">
-    <div>
-      <button id="tabBoy" class="tab active">Junge</button>
-      <button id="tabGirl" class="tab">Mädchen</button>
+  <div class="container">
+    <h1>Student Awards - Abstimmung</h1>
+    <div id="codeInputSection">
+      <label for="voteCode">Geben Sie Ihren 5-stelligen Code ein:</label>
+      <input type="text" id="voteCode" maxlength="5" />
+      <button id="loadVote">Laden</button>
+      <p id="codeError" class="error"></p>
     </div>
-    <table id="voteTable"></table>
-    <button id="submitVote" style="margin-top: 20px;">Abgeben</button>
+
+    <div id="voteSection" style="display:none;">
+      <h2>Bitte stimmen Sie ab</h2>
+      <div>
+        <button id="tabBoys" class="tab active">Junge</button>
+        <button id="tabGirls" class="tab">Mädchen</button>
+      </div>
+      <table id="voteTable"></table>
+      <button id="submitVote" disabled>Abgeben</button>
+      <p id="voteMessage"></p>
+    </div>
   </div>
-  <div id="thankYou" style="display:none; margin-top:20px; font-weight:bold; color:green;"></div>
 
   <script src="main.js"></script>
 </body>
