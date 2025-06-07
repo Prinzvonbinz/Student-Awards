@@ -1,426 +1,436 @@
-// Hauptfunktionen für Student-Awards
+// main.js
 
-// Hilfsfunktion: Zufälliger 5-stelliger Code (Buchstaben & Zahlen)
+// Hilfsfunktionen
 function generateCode() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 5; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+  return Math.floor(10000 + Math.random() * 90000).toString();
 }
 
-// --- Host Seite (host.html) ---
-
+// --- HOST Seite ---
 if (document.getElementById('hostForm')) {
   const hostForm = document.getElementById('hostForm');
-  const codeDisplay = document.getElementById('codeDisplay');
-  const createTableBtn = document.getElementById('createTableBtn');
-  let sessionCode = null;
+  const setSessionBtn = document.getElementById('setSession');
+  const createTableBtn = document.getElementById('createTableLink');
+  const generatedLinkP = document.getElementById('generatedLink');
 
-  createTableBtn.addEventListener('click', () => {
-    // Werte aus Formular holen
-    const year = document.getElementById('year').value.trim();
-    const className = document.getElementById('className').value.trim();
-    const categoriesRaw = document.getElementById('categories').value.trim();
-    const studentsRaw = document.getElementById('students').value.trim();
-    const deadline = document.getElementById('deadline').value;
+  setSessionBtn.onclick = () => {
+    // Validierung + speichern in sessionStorage
+    const year = hostForm.year.value.trim();
+    const className = hostForm.className.value.trim();
+    const categories = hostForm.categories.value.trim();
+    const studentsRaw = hostForm.students.value.trim();
+    const deadline = hostForm.deadline.value;
 
-    // Validierung
-    if (!year || !className || !categoriesRaw || !studentsRaw || !deadline) {
+    if (!year || !className || !categories || !studentsRaw || !deadline) {
       alert('Bitte alle Felder ausfüllen.');
       return;
     }
 
-    const categories = categoriesRaw.split(',').map(c => c.trim()).filter(c => c.length > 0);
-    if (categories.length === 0) {
-      alert('Bitte mindestens eine Kategorie angeben.');
-      return;
-    }
-
-    // Schüler parsen (Name und Geschlecht m/w)
-    const studentsLines = studentsRaw.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    const students = [];
-    for (const line of studentsLines) {
+    // Schüler parsen
+    let students = [];
+    const lines = studentsRaw.split('\n').map(l => l.trim()).filter(l => l);
+    for (const line of lines) {
       const parts = line.split(',');
       if (parts.length !== 2) {
-        alert('Schülerangaben müssen im Format "Name,m" oder "Name,w" sein. Fehler bei: ' + line);
+        alert('Schülerformat falsch: ' + line);
         return;
       }
       const name = parts[0].trim();
       const gender = parts[1].trim().toLowerCase();
       if (!name || (gender !== 'm' && gender !== 'w')) {
-        alert('Ungültige Schülerangabe: ' + line);
+        alert('Ungültiger Name oder Geschlecht: ' + line);
         return;
       }
       students.push({ name, gender });
     }
-    if (students.length === 0) {
-      alert('Bitte mindestens einen Schüler angeben.');
+
+    // Kategorien parsen
+    const categoriesArr = categories.split(',').map(c => c.trim()).filter(c => c);
+    if (categoriesArr.length === 0) {
+      alert('Bitte mindestens eine Kategorie angeben.');
       return;
     }
 
-    // Deadline prüfen (Datum in der Zukunft)
-    if (new Date(deadline) < new Date()) {
-      alert('Deadline muss ein zukünftiges Datum sein.');
+    // Deadline prüfen
+    const deadlineDate = new Date(deadline);
+    if (isNaN(deadlineDate.getTime())) {
+      alert('Ungültiges Datum.');
       return;
     }
 
-    // Session-Daten speichern
-    sessionCode = generateCode();
-    // Prüfen ob Code schon existiert (für Einfachheit einfach überschreiben)
-    const sessionData = {
-      year, className, categories, students, deadline,
-      votes: {}, // { userId: { category_gender: name or "-" } }
-      voters: [], // userIds, zur Anzahl
-      submittedUsers: {}, // userId: true, damit niemand doppelt abstimmen kann
+    // Objekt speichern in sessionStorage
+    const config = {
+      year,
+      className,
+      categories: categoriesArr,
+      students,
+      deadline
     };
 
-    localStorage.setItem('session_' + sessionCode, JSON.stringify(sessionData));
-    localStorage.setItem('sessionCode', sessionCode);
+    sessionStorage.setItem('studentAwardsConfig', JSON.stringify(config));
+    alert('Einstellungen gespeichert.');
 
-    codeDisplay.textContent = 'Dein Code: ' + sessionCode;
-    alert(`Session angelegt. Code: ${sessionCode}\n\nGib diesen Code auf der Abstimm-Seite ein, um abzustimmen.`);
-  });
+    createTableBtn.disabled = false;
+    generatedLinkP.textContent = '';
+  };
+
+  createTableBtn.onclick = () => {
+    // Laden aus sessionStorage
+    const configRaw = sessionStorage.getItem('studentAwardsConfig');
+    if (!configRaw) {
+      alert('Bitte zuerst Einstellungen speichern.');
+      return;
+    }
+    const config = JSON.parse(configRaw);
+
+    // Code generieren
+    let code;
+    do {
+      code = generateCode();
+    } while (localStorage.getItem('studentAwards-' + code)); // sicherstellen, dass Code noch nicht existiert
+
+    // Setup Abstimmungsdaten: 
+    // Für jede Kategorie & Geschlecht -> null (Enthaltung)
+    // Speichern im localStorage unter 'studentAwards-<code>'
+    // Außerdem speichern: config + votes: [] (Array von Stimmen), votersUsed: [] (Codes, um 2x Abstimmen zu verhindern)
+
+    const votesTemplate = {};
+    for (const category of config.categories) {
+      votesTemplate[category] = { m: null, w: null };
+    }
+
+    const saveObj = {
+      config,
+      votes: [], // jede Stimme ist ein Objekt mit voteData (Kategorie->m/w->Name|null)
+      votersUsed: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem('studentAwards-' + code, JSON.stringify(saveObj));
+
+    // Link zum Abstimmen erzeugen
+    // Link = aktuelles origin + "/vote.html?code=" + code
+    const baseUrl = window.location.origin + window.location.pathname.replace(/host\.html$/, '');
+    const voteLink = `${baseUrl}vote.html?code=${code}`;
+
+    generatedLinkP.innerHTML = `Link zum Abstimmen: <a href="${voteLink}" target="_blank">${voteLink}</a> <br> 5-stelliger Code: <strong>${code}</strong>`;
+  };
 }
 
-
-// --- Voting Seite (vote.html) ---
-
+// --- VOTE Seite ---
 if (document.getElementById('voteTable')) {
   const codeInput = document.getElementById('codeInput');
-  const startVoteBtn = document.getElementById('startVoteBtn');
-  const voteContainer = document.getElementById('voteContainer');
+  const loadBtn = document.getElementById('loadBtn');
   const voteTable = document.getElementById('voteTable');
-  const namesList = document.getElementById('namesList');
-  const submitBtn = document.getElementById('submitBtn');
+  const votingArea = document.getElementById('votingArea');
+  const submitVote = document.getElementById('submitVote');
   const thankYou = document.getElementById('thankYou');
+  const tabBoy = document.getElementById('tabBoy');
+  const tabGirl = document.getElementById('tabGirl');
 
-  let session = null;
-  let sessionCode = null;
-  let selectedGender = 'm'; // 'm' oder 'w'
-  let currentCategory = null;
-  let userId = null; // zufällig generierte ID für den Voter
-  let userVotes = {}; // { category_gender: name or "-" }
+  let currentData = null;
+  let currentCode = null;
+  let currentGender = 'm'; // m = Junge, w = Mädchen
+  let selections = {}; // Kategorie -> Name | null (Enthaltung)
+
+  function resetSelections() {
+    selections = {};
+    if (!currentData) return;
+    for (const cat of currentData.config.categories) {
+      selections[cat] = null;
+    }
+  }
 
   function renderTable() {
-    voteTable.innerHTML = '';
+    if (!currentData) return;
 
-    // Header: Kategorie | Junge | Mädchen
-    const thead = document.createElement('thead');
-    const trHead = document.createElement('tr');
+    voteTable.innerHTML = '';
+    const header = document.createElement('tr');
     const thCategory = document.createElement('th');
     thCategory.textContent = 'Kategorie';
-    trHead.appendChild(thCategory);
+    header.appendChild(thCategory);
 
-    const thBoy = document.createElement('th');
-    thBoy.textContent = 'Junge';
-    trHead.appendChild(thBoy);
+    const thSelection = document.createElement('th');
+    thSelection.textContent = currentGender === 'm' ? 'Junge' : 'Mädchen';
+    header.appendChild(thSelection);
+    voteTable.appendChild(header);
 
-    const thGirl = document.createElement('th');
-    thGirl.textContent = 'Mädchen';
-    trHead.appendChild(thGirl);
-
-    thead.appendChild(trHead);
-    voteTable.appendChild(thead);
-
-    // Body mit Kategorien
-    const tbody = document.createElement('tbody');
-    for (const cat of session.categories) {
+    for (const category of currentData.config.categories) {
       const tr = document.createElement('tr');
-
       const tdCat = document.createElement('td');
-      tdCat.textContent = cat;
+      tdCat.textContent = category;
       tr.appendChild(tdCat);
 
-      // Junge Feld
-      const tdBoy = document.createElement('td');
-      tdBoy.classList.add('clickable');
-      tdBoy.dataset.category = cat;
-      tdBoy.dataset.gender = 'm';
-      tdBoy.textContent = userVotes[cat + '_m'] || '-';
-      tdBoy.addEventListener('click', () => {
-        openNamesList(cat, 'm', tdBoy);
-      });
-      tr.appendChild(tdBoy);
+      const tdSelect = document.createElement('td');
+      const selectBtn = document.createElement('button');
+      selectBtn.textContent = selections[category] || '- (Enthaltung)';
+      selectBtn.onclick = () => {
+        openSelectionPopup(category);
+      };
+      tdSelect.appendChild(selectBtn);
+      tr.appendChild(tdSelect);
 
-      // Mädchen Feld
-      const tdGirl = document.createElement('td');
-      tdGirl.classList.add('clickable');
-      tdGirl.dataset.category = cat;
-      tdGirl.dataset.gender = 'w';
-      tdGirl.textContent = userVotes[cat + '_w'] || '-';
-      tdGirl.addEventListener('click', () => {
-        openNamesList(cat, 'w', tdGirl);
-      });
-      tr.appendChild(tdGirl);
-
-      tbody.appendChild(tr);
+      voteTable.appendChild(tr);
     }
-    voteTable.appendChild(tbody);
   }
 
-  function openNamesList(category, gender, cell) {
-    currentCategory = category;
-    selectedGender = gender;
-    namesList.innerHTML = '';
+  function openSelectionPopup(category) {
+    if (!currentData) return;
+    const students = currentData.config.students.filter(s => s.gender === currentGender);
+    const popup = document.createElement('div');
+    popup.className = 'popup';
 
-    // Option Enthalten ("-")
-    const enthaltnBtn = document.createElement('button');
-    enthaltnBtn.textContent = '- (Enthalten)';
-    enthaltnBtn.style.marginRight = '10px';
-    enthaltnBtn.addEventListener('click', () => {
-      userVotes[category + '_' + gender] = '-';
-      cell.textContent = '-';
-      namesList.innerHTML = '';
-      checkSubmitEnabled();
-    });
-    namesList.appendChild(enthaltnBtn);
+    const title = document.createElement('h3');
+    title.textContent = `Wähle für Kategorie "${category}" (${currentGender === 'm' ? 'Junge' : 'Mädchen'})`;
+    popup.appendChild(title);
 
-    // Alle Schüler des gewählten Geschlechts anzeigen
-    const filteredStudents = session.students.filter(s => s.gender === gender);
-    filteredStudents.forEach(s => {
+    const list = document.createElement('ul');
+    list.style.listStyle = 'none';
+    list.style.padding = 0;
+
+    for (const student of students) {
+      const li = document.createElement('li');
       const btn = document.createElement('button');
-      btn.textContent = s.name;
-      btn.style.marginRight = '10px';
-      btn.style.marginTop = '5px';
-      btn.addEventListener('click', () => {
-        userVotes[category + '_' + gender] = s.name;
-        cell.textContent = s.name;
-        namesList.innerHTML = '';
-        checkSubmitEnabled();
-      });
-      namesList.appendChild(btn);
+      btn.textContent = student.name;
+      btn.onclick = () => {
+        selections[category] = student.name;
+        document.body.removeChild(popup);
+        renderTable();
+      };
+      li.appendChild(btn);
+      list.appendChild(li);
+    }
+    // Enthaltung
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.textContent = '- (Enthaltung)';
+    btn.onclick = () => {
+      selections[category] = null;
+      document.body.removeChild(popup);
+      renderTable();
+    };
+    li.appendChild(btn);
+    list.appendChild(li);
+
+    popup.appendChild(list);
+
+    // Close on click outside
+    popup.onclick = (e) => {
+      if (e.target === popup) {
+        document.body.removeChild(popup);
+      }
+    };
+
+    Object.assign(popup.style, {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: 'white',
+      border: '2px solid black',
+      padding: '1rem',
+      zIndex: 1000,
+      maxHeight: '80vh',
+      overflowY: 'auto',
     });
+
+    document.body.appendChild(popup);
   }
 
-  function checkSubmitEnabled() {
-    // Alle Kategorien und Geschlechter müssen eine Auswahl haben (auch "-")
-    for (const cat of session.categories) {
-      if (!(cat + '_m' in userVotes)) return disableSubmit();
-      if (!(cat + '_w' in userVotes)) return disableSubmit();
+  function validateAllSelected() {
+    if (!currentData) return false;
+    for (const category of currentData.config.categories) {
+      if (!(category in selections)) return false;
     }
-    enableSubmit();
-  }
-  function enableSubmit() {
-    submitBtn.disabled = false;
-  }
-  function disableSubmit() {
-    submitBtn.disabled = true;
+    return true;
   }
 
-  function loadSession(code) {
-    const raw = localStorage.getItem('session_' + code);
-    if (!raw) {
-      alert('Ungültiger Code oder Session nicht gefunden.');
-      return null;
+  loadBtn.onclick = () => {
+    const code = codeInput.value.trim();
+    if (code.length !== 5) {
+      alert('Bitte gültigen 5-stelligen Code eingeben.');
+      return;
     }
-    const data = JSON.parse(raw);
-    return data;
-  }
+    const dataRaw = localStorage.getItem('studentAwards-' + code);
+    if (!dataRaw) {
+      alert('Code nicht gefunden.');
+      return;
+    }
+    currentData = JSON.parse(dataRaw);
+    currentCode = code;
 
-  function generateUserId() {
-    return 'u_' + Math.random().toString(36).substring(2, 10);
-  }
-
-  function loadVoting() {
-    const code = codeInput.value.trim().toUpperCase();
-    if (!code) {
-      alert('Bitte Code eingeben.');
+    // Prüfen ob Deadline schon abgelaufen
+    const deadlineDate = new Date(currentData.config.deadline);
+    const now = new Date();
+    if (now > deadlineDate) {
+      alert('Deadline ist bereits abgelaufen. Abstimmung nicht mehr möglich.');
       return;
     }
 
-    const data = loadSession(code);
-    if (!data) return;
-
-    // Prüfen, ob User schon abgestimmt hat
-    if (data.submittedUsers && Object.values(data.submittedUsers).includes(userId)) {
-      alert('Du hast bereits abgestimmt. Danke!');
+    // Prüfen ob schon abgestimmt wurde (für diese Seite: prüfen anhand code im sessionStorage)
+    const votedCodes = JSON.parse(sessionStorage.getItem('studentAwards-votedCodes') || '[]');
+    if (votedCodes.includes(code)) {
+      alert('Du hast bereits abgestimmt.');
       return;
     }
 
-    sessionCode = code;
-    session = data;
-    userId = generateUserId();
-
-    userVotes = {};
-
-    // Wenn der User schon Stimmen hatte (reload), laden wir sie (optional)
-    if (session.votes && session.votes[userId]) {
-      userVotes = session.votes[userId];
-    }
-
-    voteContainer.style.display = 'block';
-    document.getElementById('codeEntry').style.display = 'none';
+    resetSelections();
+    votingArea.style.display = 'block';
     thankYou.style.display = 'none';
-
     renderTable();
-    disableSubmit();
-  }
+  };
 
-  submitBtn.addEventListener('click', () => {
-    // Prüfen, ob alle ausgefüllt
-    for (const cat of session.categories) {
-      if (!(cat + '_m' in userVotes)) {
-        alert('Bitte alle Felder ausfüllen.');
-        return;
-      }
-      if (!(cat + '_w' in userVotes)) {
-        alert('Bitte alle Felder ausfüllen.');
-        return;
-      }
+  tabBoy.onclick = () => {
+    currentGender = 'm';
+    tabBoy.classList.add('active');
+    tabGirl.classList.remove('active');
+    renderTable();
+  };
+
+  tabGirl.onclick = () => {
+    currentGender = 'w';
+    tabGirl.classList.add('active');
+    tabBoy.classList.remove('active');
+    renderTable();
+  };
+
+  submitVote.onclick = () => {
+    if (!validateAllSelected()) {
+      alert('Bitte in allen Kategorien eine Auswahl treffen oder Enthaltung wählen.');
+      return;
+    }
+    // Speichern der Stimme
+    // Für Gleichzeitigkeit einfach votes.push({ selections }) an votes Array
+    const dataRaw = localStorage.getItem('studentAwards-' + currentCode);
+    if (!dataRaw) {
+      alert('Daten nicht gefunden.');
+      return;
+    }
+    const dataObj = JSON.parse(dataRaw);
+
+    // Prüfen ob Code schon abgestimmt hat
+    if (dataObj.votersUsed.includes(currentCode)) {
+      alert('Du hast bereits abgestimmt.');
+      return;
     }
 
-    // Speichern der Stimmen
-    if (!session.votes) session.votes = {};
-    session.votes[userId] = userVotes;
+    dataObj.votes.push({ selections });
+    dataObj.votersUsed.push(currentCode);
+    localStorage.setItem('studentAwards-' + currentCode, JSON.stringify(dataObj));
 
-    if (!session.submittedUsers) session.submittedUsers = {};
-    session.submittedUsers[userId] = true;
+    // Session merken, dass Code abgestimmt hat
+    const votedCodes = JSON.parse(sessionStorage.getItem('studentAwards-votedCodes') || '[]');
+    votedCodes.push(currentCode);
+    sessionStorage.setItem('studentAwards-votedCodes', JSON.stringify(votedCodes));
 
-    // Zähler der abgegebenen Stimmen
-    if (!session.voters) session.voters = [];
-    if (!session.voters.includes(userId)) session.voters.push(userId);
-
-    localStorage.setItem('session_' + sessionCode, JSON.stringify(session));
-
-    voteContainer.style.display = 'none';
+    votingArea.style.display = 'none';
     thankYou.style.display = 'block';
-  });
+    thankYou.textContent = 'Vielen Dank für deine Abstimmung!';
 
-  startVoteBtn.addEventListener('click', loadVoting);
+  };
 }
 
-
-// Ergebnis-Seite (result.html)
-
-if (document.getElementById('loadBtn')) {
-  const loadBtn = document.getElementById('loadBtn');
+// --- RESULTS Seite ---
+if (document.querySelector('body') && document.getElementById('votersCount')) {
   const codeInput = document.getElementById('codeInput');
-  const resultsContainer = document.getElementById('resultsContainer');
-  const winnersDiv = document.getElementById('winners');
-  const votersCountSpan = document.getElementById('votersCount');
+  const loadBtn = document.getElementById('loadBtn');
+  const votersCount = document.getElementById('votersCount');
   const deadlineInfo = document.getElementById('deadlineInfo');
+  const winnersDiv = document.getElementById('winners');
 
-  function loadSession(code) {
-    const raw = localStorage.getItem('session_' + code);
-    if (!raw) {
-      alert('Ungültiger Code oder Session nicht gefunden.');
-      return null;
+  loadBtn.onclick = () => {
+    const code = codeInput.value.trim();
+    if (code.length !== 5) {
+      alert('Bitte gültigen 5-stelligen Code eingeben.');
+      return;
     }
-    const data = JSON.parse(raw);
-    return data;
-  }
+    const dataRaw = localStorage.getItem('studentAwards-' + code);
+    if (!dataRaw) {
+      alert('Code nicht gefunden.');
+      return;
+    }
+    const dataObj = JSON.parse(dataRaw);
 
-  function displayResults(session) {
-    winnersDiv.innerHTML = '';
-    votersCountSpan.textContent = session.voters ? session.voters.length : 0;
-    deadlineInfo.textContent = 'Deadline: ' + session.deadline;
-
-    // Prüfen ob Deadline erreicht oder überschritten
+    const deadlineDate = new Date(dataObj.config.deadline);
     const now = new Date();
-    const deadlineDate = new Date(session.deadline);
+
     if (now < deadlineDate) {
-      winnersDiv.textContent = 'Ergebnisse sind erst nach Ablauf der Deadline sichtbar.';
+      alert(`Deadline ist noch nicht erreicht (erst am ${dataObj.config.deadline}).`);
       return;
     }
 
-    // Ergebnisse auswerten: pro Kategorie & Geschlecht Gewinner mit max Stimmen
-    // Stimmen zusammenzählen
-    const tally = {}; 
-    // Struktur: tally[category_gender][name] = count
+    // Zeige Anzahl Abstimmende (Zähler)
+    votersCount.textContent = dataObj.votes.length;
 
-    if (!session.votes) {
-      winnersDiv.textContent = 'Noch keine Stimmen abgegeben.';
-      return;
+    // Zeige Deadline
+    deadlineInfo.textContent = `Deadline war am: ${dataObj.config.deadline}`;
+
+    // Ergebnisse auswerten
+    // Struktur: Kategorie -> Geschlecht -> Kandidat -> Stimmenanzahl
+    const results = {};
+    for (const category of dataObj.config.categories) {
+      results[category] = { m: {}, w: {} };
     }
 
-    for (const voteKey in session.votes) {
-      const vote = session.votes[voteKey];
-      for (const catGen in vote) {
-        const name = vote[catGen];
-        if (name === '-') continue; // Enthaltung zählt nicht
-        if (!tally[catGen]) tally[catGen] = {};
-        if (!tally[catGen][name]) tally[catGen][name] = 0;
-        tally[catGen][name]++;
+    for (const vote of dataObj.votes) {
+      for (const category of dataObj.config.categories) {
+        const nameM = vote.selections[category];
+        if (nameM && dataObj.config.students.some(s => s.name === nameM && s.gender === 'm')) {
+          results[category].m[nameM] = (results[category].m[nameM] || 0) + 1;
+        }
+        if (nameM && dataObj.config.students.some(s => s.name === nameM && s.gender === 'w')) {
+          results[category].w[nameM] = (results[category].w[nameM] || 0) + 1;
+        }
       }
     }
 
-    // Tabelle erstellen
-    const table = document.createElement('table');
-    table.classList.add('result-table');
+    // Gewinner ermitteln per Kategorie & Geschlecht
+    winnersDiv.innerHTML = '';
 
-    // Kopfzeile: Kategorie | Junge Gewinner | Stimmen | Mädchen Gewinner | Stimmen
-    const thead = document.createElement('thead');
-    const headRow = document.createElement('tr');
-    ['Kategorie', 'Junge Gewinner', 'Stimmen', 'Mädchen Gewinner', 'Stimmen'].forEach(txt => {
-      const th = document.createElement('th');
-      th.textContent = txt;
-      headRow.appendChild(th);
-    });
-    thead.appendChild(headRow);
-    table.appendChild(thead);
+    // --- Fortsetzung RESULTS Seite ---
 
-    const tbody = document.createElement('tbody');
+    for (const category of dataObj.config.categories) {
+      const catDiv = document.createElement('div');
+      catDiv.style.marginBottom = '1rem';
 
-    session.categories.forEach(cat => {
-      const tr = document.createElement('tr');
+      const catTitle = document.createElement('h3');
+      catTitle.textContent = `Kategorie: ${category}`;
+      catDiv.appendChild(catTitle);
 
-      const tdCat = document.createElement('td');
-      tdCat.textContent = cat;
-      tr.appendChild(tdCat);
+      // Für Jungen (m)
+      const mResults = results[category].m;
+      const mEntries = Object.entries(mResults);
+      if (mEntries.length === 0) {
+        const p = document.createElement('p');
+        p.textContent = 'Keine Stimmen für Jungen.';
+        catDiv.appendChild(p);
+      } else {
+        // Max Stimmen finden
+        let maxVotesM = Math.max(...mEntries.map(([_, count]) => count));
+        const winnersM = mEntries.filter(([_, count]) => count === maxVotesM).map(([name]) => name);
 
-      // Junge Gewinner
-      const catBoyKey = cat + '_m';
-      let maxVotesBoy = 0;
-      let winnersBoy = [];
-      if (tally[catBoyKey]) {
-        maxVotesBoy = Math.max(...Object.values(tally[catBoyKey]));
-        winnersBoy = Object.entries(tally[catBoyKey])
-          .filter(([_, count]) => count === maxVotesBoy)
-          .map(([name]) => name);
+        const pM = document.createElement('p');
+        pM.innerHTML = `<strong>Jungen Gewinner:</strong> ${winnersM.join(', ')} (${maxVotesM} Stimme${maxVotesM > 1 ? 'n' : ''})`;
+        catDiv.appendChild(pM);
       }
-      const tdBoyWinners = document.createElement('td');
-      tdBoyWinners.textContent = winnersBoy.length > 0 ? winnersBoy.join(', ') : '-';
-      tr.appendChild(tdBoyWinners);
 
-      const tdBoyVotes = document.createElement('td');
-      tdBoyVotes.textContent = maxVotesBoy > 0 ? maxVotesBoy : '-';
-      tr.appendChild(tdBoyVotes);
+      // Für Mädchen (w)
+      const wResults = results[category].w;
+      const wEntries = Object.entries(wResults);
+      if (wEntries.length === 0) {
+        const p = document.createElement('p');
+        p.textContent = 'Keine Stimmen für Mädchen.';
+        catDiv.appendChild(p);
+      } else {
+        // Max Stimmen finden
+        let maxVotesW = Math.max(...wEntries.map(([_, count]) => count));
+        const winnersW = wEntries.filter(([_, count]) => count === maxVotesW).map(([name]) => name);
 
-      // Mädchen Gewinner
-      const catGirlKey = cat + '_w';
-      let maxVotesGirl = 0;
-      let winnersGirl = [];
-      if (tally[catGirlKey]) {
-        maxVotesGirl = Math.max(...Object.values(tally[catGirlKey]));
-        winnersGirl = Object.entries(tally[catGirlKey])
-          .filter(([_, count]) => count === maxVotesGirl)
-          .map(([name]) => name);
+        const pW = document.createElement('p');
+        pW.innerHTML = `<strong>Mädchen Gewinner:</strong> ${winnersW.join(', ')} (${maxVotesW} Stimme${maxVotesW > 1 ? 'n' : ''})`;
+        catDiv.appendChild(pW);
       }
-      const tdGirlWinners = document.createElement('td');
-      tdGirlWinners.textContent = winnersGirl.length > 0 ? winnersGirl.join(', ') : '-';
-      tr.appendChild(tdGirlWinners);
 
-      const tdGirlVotes = document.createElement('td');
-      tdGirlVotes.textContent = maxVotesGirl > 0 ? maxVotesGirl : '-';
-      tr.appendChild(tdGirlVotes);
-
-      tbody.appendChild(tr);
-    });
-
-    table.appendChild(tbody);
-    winnersDiv.appendChild(table);
-  }
-
-  loadBtn.addEventListener('click', () => {
-    const code = codeInput.value.trim().toUpperCase();
-    if (!code) {
-      alert('Bitte Code eingeben.');
-      return;
+      winnersDiv.appendChild(catDiv);
     }
-    const session = loadSession(code);
-    if (!session) return;
-    displayResults(session);
-  });
+  };
 }
