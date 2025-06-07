@@ -1,34 +1,15 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Abstimmen</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Abstimmung</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Student Awards - Abstimmen</h1>
-
-  <label>
-    Code eingeben:
-    <input type="text" id="voteCodeInput" maxlength="6" placeholder="6-stelliger Code" />
-    <button id="loadVote">Laden</button>
-  </label>
-  <div id="codeError" class="error"></div>
-
-  <div id="voteSection" style="display:none;">
-    <div id="tabs">
-      <button id="tabBoys" class="active">Junge</button>
-      <button id="tabGirls">Mädchen</button>
-    </div>
-
-    <table id="voteTable" border="1">
-      <!-- Dynamisch gefüllt -->
-    </table>
-
-    <button id="submitVote">Abgeben</button>
-    <div id="voteMessage"></div>
-  </div>
+  <h1>Student Awards - Abstimmung</h1>
+  <div id="voteArea"></div>
+  <button id="submitVote">Abgeben</button>
+  <div id="message"></div>
 
   <script src="main.js"></script>
 </body>
