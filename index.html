@@ -3,41 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Host</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Student Awards - Start</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Host Menü</h1>
-  <form id="hostForm">
-    <label for="year">Jahr:</label>
-    <input type="number" id="year" name="year" min="2025" max="2100" value="2025" required />
-    <br />
-
-    <label for="className">Klasse:</label>
-    <input type="text" id="className" name="className" placeholder="z.B. 10b" required />
-    <br />
-
-    <label for="categories">Kategorien (kommagetrennt):</label>
-    <input type="text" id="categories" name="categories" placeholder="z.B. Lustig, Sportlich" required />
-    <br />
-
-    <label for="students">Schüler (Name, m/w) pro Zeile:</label>
-    <textarea id="students" name="students" rows="10" placeholder="Max Mustermann,m
-Anna Beispiel,w" required></textarea>
-    <br />
-
-    <label for="deadline">Deadline (Ergebnis-Datum):</label>
-    <input type="date" id="deadline" name="deadline" required />
-    <br />
-
-    <button type="button" id="setSession">Einstellen</button>
-  </form>
-
-  <hr />
-
-  <button type="button" id="createTableLink" disabled>Tabelle erstellen & Link generieren</button>
-  <p id="generatedLink"></p>
-
-  <script src="main.js"></script>
+  <div class="container">
+    <h1>Student Awards</h1>
+    <div class="btn-group">
+      <button onclick="location.href='host.html'">Host werden</button>
+      <button onclick="location.href='vote.html'">Abstimmen</button>
+      <button onclick="location.href='result.html'">Ergebnisse (Host)</button>
+    </div>
+  </div>
 </body>
 </html>
