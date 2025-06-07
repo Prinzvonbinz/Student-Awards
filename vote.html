@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student Awards - Abstimmung</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+  h1 { margin-bottom: 15px; }
+  label { display: block; margin-top: 10px; font-weight: bold; }
+  input[type=text] { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+  button { margin-top: 15px; padding: 10px 20px; font-size: 16px; }
+  #voteForm { margin-top: 20px; }
+  .category-group { margin-bottom: 20px; }
+  .category-label { font-weight: bold; margin-bottom: 5px; }
+  .gender-inputs { display: flex; gap: 10px; }
+  .gender-inputs > div { flex: 1; }
+  #message { margin-top: 15px; color: red; }
+</style>
+</head>
+<body>
+
+<h1>Student Awards - Abstimmung</h1>
+
+<div id="loginDiv">
+  <label for="codeInput">Zugangscode eingeben:</label>
+  <input type="text" id="codeInput" placeholder="Code hier eingeben" />
+  <button id="loginBtn">Login</button>
+  <p id="loginMessage" style="color:red;"></p>
+</div>
+
+<div id="voteDiv" style="display:none;">
+  <form id="voteForm">
+    <div id="categoriesContainer"></div>
+    <button type="submit">Abstimmen</button>
+  </form>
+  <p id="voteMessage" style="color:green;"></p>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
