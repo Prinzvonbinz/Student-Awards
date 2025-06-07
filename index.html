@@ -31,7 +31,7 @@
 <label for="deadline">Deadline (Datum für Ergebnis):</label>
 <input type="date" id="deadline" />
 
-<button id="createBtn">Tabelle erstellen & Link generieren</button>
+<button id="createBtn">Tabelle erstellen & Links generieren</button>
 
 <div id="linkOutput"></div>
 
@@ -87,17 +87,20 @@
 
     const code = generateCode();
 
+    // Daten speichern mit leerem votes und voted Array
     const data = { year, className, categories, students, deadline, votes: {}, voted: [] };
 
     localStorage.setItem(code, JSON.stringify(data));
 
-    const url = `${location.origin}${location.pathname.replace('index.html','vote.html')}?code=${code}`;
+    // Generierte Links
+    const voteLink = `${location.origin}${location.pathname.replace('index.html','vote.html')}?code=${code}`;
+    const resultLink = `${location.origin}${location.pathname.replace('index.html','result.html')}?code=${code}`;
 
     const linkOutput = document.getElementById('linkOutput');
     linkOutput.innerHTML = `
-      <p><strong>Link für die Abstimmung (einfügen in Browser):</strong></p>
-      <p><a href="${url}" target="_blank">${url}</a></p>
-      <p><strong>Code für Abstimmung:</strong> ${code}</p>
+      <p><strong>Link für die Abstimmung (Schüler):</strong><br><a href="${voteLink}" target="_blank">${voteLink}</a></p>
+      <p><strong>Link für die Ergebnisansicht (Host, nach Deadline):</strong><br><a href="${resultLink}" target="_blank">${resultLink}</a></p>
+      <p><strong>Abstimmungscode:</strong> ${code}</p>
     `;
   });
 </script>
