@@ -4,52 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Awards - Abstimmung</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
-    #codeEntry { margin-bottom: 20px; }
-    input[type="text"] { width: 200px; padding: 8px; border-radius: 4px; border: none; background: #222; color: #eee; }
-    button { padding: 8px 15px; background: #4caf50; border: none; color: white; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #45a049; }
-    table { border-collapse: collapse; width: 100%; max-width: 800px; margin-bottom: 15px; }
-    th, td { border: 1px solid #555; padding: 10px; text-align: center; }
-    th { background: #333; }
-    td.clickable:hover { background: #444; cursor: pointer; }
-    #namesList { background: #222; border-radius: 4px; padding: 10px; max-height: 150px; overflow-y: auto; margin-bottom: 15px; }
-    #submitBtn { background: #2196f3; }
-    #submitBtn:disabled { background: #555; cursor: not-allowed; }
-    #thankYou { font-size: 1.2em; color: #6ee26e; }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h1>Student Awards - Abstimmung</h1>
-
-  <div id="codeEntry">
-    <label for="codeInput">Bitte deinen 5-stelligen Code eingeben:</label>
-    <input type="text" id="codeInput" maxlength="5" autocomplete="off" />
-    <button id="startVoteBtn">Los</button>
-  </div>
-
-  <div id="voteContainer" class="hidden" style="display:none;">
+  <label for="codeInput">Bitte Code eingeben:</label>
+  <input type="text" id="codeInput" maxlength="5" />
+  <button id="loadBtn">Laden</button>
+  <hr />
+  <div id="votingArea" style="display:none;">
+    <div>
+      <button id="tabBoy" class="tab active">Junge</button>
+      <button id="tabGirl" class="tab">Mädchen</button>
+    </div>
     <table id="voteTable"></table>
-    <div id="namesList"></div>
-    <button id="submitBtn" disabled>Abgeben</button>
+    <button id="submitVote" style="margin-top: 20px;">Abgeben</button>
   </div>
-
-  <div id="thankYou" style="display:none;">Danke für deine Abstimmung!</div>
+  <div id="thankYou" style="display:none; margin-top:20px; font-weight:bold; color:green;"></div>
 
   <script src="main.js"></script>
-  <script>
-    window.onload = function () {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has("code")) {
-        document.getElementById('codeInput').value = urlParams.get("code").toUpperCase();
-        loadVoting();
-      }
-    };
-
-    document.getElementById('startVoteBtn').addEventListener('click', () => {
-      loadVoting();
-    });
-  </script>
 </body>
 </html>
