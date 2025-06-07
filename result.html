@@ -3,17 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Ergebnisse</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Student Awards - Ergebnisse (Host)</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Ergebnisse</h1>
-  <label for="codeInput">Bitte Host-Code eingeben:</label>
-  <input type="text" id="codeInput" maxlength="5" />
-  <button id="loadBtn">Ergebnisse laden</button>
-  <p>Abstimmende: <span id="votersCount">0</span></p>
-  <p id="deadlineInfo"></p>
-  <div id="winners"></div>
+  <div class="container">
+    <h1>Student Awards - Ergebnisse (Host)</h1>
+    <div id="hostCodeSection">
+      <label for="hostCodeInput">Geben Sie Ihren 5-stelligen Host-Code ein:</label>
+      <input type="text" id="hostCodeInput" maxlength="5" />
+      <button id="loadResults">Ergebnisse laden</button>
+      <p id="hostCodeError" class="error"></p>
+    </div>
+
+    <div id="resultsSection" style="display:none;">
+      <h2>Ergebnisse</h2>
+      <p id="deadlineInfo"></p>
+      <p>Abstimmungen insgesamt: <span id="voteCount"></span></p>
+      <div id="resultsOutput"></div>
+    </div>
+  </div>
 
   <script src="main.js"></script>
 </body>
