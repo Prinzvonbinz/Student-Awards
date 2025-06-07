@@ -4,114 +4,115 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Student Awards - Ergebnisse</title>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; background: #fafafa; }
-  h1, h2 { text-align: center; }
-  table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
-  th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
-  th { background: #ddd; }
-  .category-section { margin-bottom: 3rem; }
-  .no-votes { color: #888; text-align: center; margin-top: 1rem; }
-</style>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <h1>Student Awards - Ergebnisse</h1>
+  <div id="info"></div>
+  <div id="resultArea" style="display:none;">
+    <table id="resultTable" border="1" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Kategorie</th>
+          <th>Junge(n) mit Stimmenanzahl</th>
+          <th>Mädchen mit Stimmenanzahl</th>
+        </tr>
+      </thead>
+      <tbody id="resultTableBody"></tbody>
+    </table>
+  </div>
 
-<h1>Student Awards - Ergebnisse</h1>
-<div id="error"></div>
-<div id="results"></div>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const storageKey = 'studentAwards_' + code;
+    const infoDiv = document.getElementById('info');
+    const resultArea = document.getElementById('resultArea');
+    const resultTableBody = document.getElementById('resultTableBody');
 
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-
-  const errorDiv = document.getElementById('error');
-  const resultsDiv = document.getElementById('results');
-
-  if (!code) {
-    errorDiv.textContent = 'Ungültiger Code! Bitte mit gültigem Link aufrufen.';
-  } else {
-    const rawData = localStorage.getItem(code);
-    if (!rawData) {
-      errorDiv.textContent = 'Ungültiger Code oder keine Daten gefunden.';
-    } else {
-      const data = JSON.parse(rawData);
-
-      if(!data.votes) {
-        errorDiv.textContent = 'Noch keine Abstimmungsergebnisse vorhanden.';
-        return;
-      }
-
-      const categories = data.categories;
-      const students = data.students;
-
-      // Jungs und Mädchen filtern
-      const boys = students.filter(s => s.gender === 'm');
-      const girls = students.filter(s => s.gender === 'w');
-
-      // Funktion: Votes sortieren nach Stimmenzahl absteigend
-      function sortedVotes(voteObj) {
-        if(!voteObj) return [];
-        return Object.entries(voteObj).sort((a,b) => b[1] - a[1]);
-      }
-
-      categories.forEach(category => {
-        const catSection = document.createElement('div');
-        catSection.classList.add('category-section');
-
-        const catTitle = document.createElement('h2');
-        catTitle.textContent = category;
-        catSection.appendChild(catTitle);
-
-        ['m','w'].forEach(gender => {
-          const genderTitle = document.createElement('h3');
-          genderTitle.textContent = gender === 'm' ? 'Jungen' : 'Mädchen';
-          catSection.appendChild(genderTitle);
-
-          const votes = data.votes[category] ? data.votes[category][gender] : null;
-
-          if(!votes || Object.keys(votes).length === 0) {
-            const noVotes = document.createElement('p');
-            noVotes.classList.add('no-votes');
-            noVotes.textContent = 'Keine Stimmen vorhanden.';
-            catSection.appendChild(noVotes);
-            return;
-          }
-
-          // Sortierte Ergebnisse
-          const sorted = sortedVotes(votes);
-
-          const table = document.createElement('table');
-          const thead = document.createElement('thead');
-          const headerRow = document.createElement('tr');
-          const thName = document.createElement('th');
-          thName.textContent = 'Name';
-          const thVotes = document.createElement('th');
-          thVotes.textContent = 'Stimmen';
-          headerRow.appendChild(thName);
-          headerRow.appendChild(thVotes);
-          thead.appendChild(headerRow);
-          table.appendChild(thead);
-
-          const tbody = document.createElement('tbody');
-          sorted.forEach(([name, count]) => {
-            const tr = document.createElement('tr');
-            const tdName = document.createElement('td');
-            tdName.textContent = name;
-            const tdCount = document.createElement('td');
-            tdCount.textContent = count;
-            tr.appendChild(tdName);
-            tr.appendChild(tdCount);
-            tbody.appendChild(tr);
-          });
-          table.appendChild(tbody);
-          catSection.appendChild(table);
-        });
-
-        resultsDiv.appendChild(catSection);
-      });
+    if (!code) {
+      infoDiv.textContent = 'Kein Code angegeben.';
+      resultArea.style.display = 'none';
+      throw new Error('Kein Code im URL-Parameter.');
     }
-  }
-</script>
 
+    let data = localStorage.getItem(storageKey);
+    if (!data) {
+      infoDiv.textContent = 'Ungültiger Code.';
+      resultArea.style.display = 'none';
+      throw new Error('Kein Datensatz gefunden für Code.');
+    }
+
+    data = JSON.parse(data);
+
+    // Prüfen ob Deadline erreicht oder überschritten
+    const deadlineDate = new Date(data.deadline);
+    const now = new Date();
+    if (now < deadlineDate) {
+      infoDiv.textContent = `Ergebnisse sind erst nach Ablauf der Deadline (${data.deadline}) sichtbar.`;
+      resultArea.style.display = 'none';
+      throw new Error('Deadline noch nicht erreicht.');
+    }
+
+    infoDiv.textContent = `Jahr: ${data.year} | Klasse: ${data.className} | Deadline: ${data.deadline}`;
+
+    // Wenn keine Stimmen abgegeben wurden
+    if (!data.votes || data.votes.length === 0) {
+      infoDiv.textContent += ' | Es wurden noch keine Stimmen abgegeben.';
+      resultArea.style.display = 'none';
+      throw new Error('Keine Stimmen.');
+    }
+
+    // Auswertung:
+    // Für jede Kategorie und Geschlecht zählen wir, wie oft jeder Name gewählt wurde
+    // Dann ermitteln wir den/die Gewinner mit höchster Stimmenanzahl (bei Gleichstand alle)
+
+    function countVotes(gender, category) {
+      const counts = {};
+      data.votes.forEach(entry => {
+        if (entry.gender === gender) {
+          const voteForCat = entry.votes.find(v => v.category === category);
+          if (voteForCat && voteForCat.vote !== '') {
+            counts[voteForCat.vote] = (counts[voteForCat.vote] || 0) + 1;
+          }
+        }
+      });
+      return counts;
+    }
+
+    function getWinners(counts) {
+      const maxVotes = Math.max(...Object.values(counts), 0);
+      if (maxVotes === 0) return [];
+      return Object.entries(counts).filter(([name, count]) => count === maxVotes);
+    }
+
+    // Tabelle aufbauen
+    resultTableBody.innerHTML = '';
+
+    data.categories.forEach(cat => {
+      const tr = document.createElement('tr');
+
+      const tdCat = document.createElement('td');
+      tdCat.textContent = cat;
+      tr.appendChild(tdCat);
+
+      ['m', 'w'].forEach(gender => {
+        const td = document.createElement('td');
+        const counts = countVotes(gender, cat);
+        const winners = getWinners(counts);
+        if (winners.length === 0) {
+          td.textContent = '- keine Stimmen -';
+        } else {
+          // Mehrere Gewinner bei Gleichstand
+          td.innerHTML = winners.map(([name, count]) => `${name} (${count})`).join('<br/>');
+        }
+        tr.appendChild(td);
+      });
+
+      resultTableBody.appendChild(tr);
+    });
+
+    resultArea.style.display = 'block';
+  </script>
 </body>
 </html>
