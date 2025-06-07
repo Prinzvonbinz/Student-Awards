@@ -1,30 +1,13 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Ergebnisse</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Ergebnisse</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Student Awards - Ergebnisse</h1>
-
-  <label>
-    Host-Code eingeben:
-    <input type="text" id="resultCodeInput" maxlength="6" placeholder="6-stelliger Code" />
-    <button id="loadResults">Ergebnisse laden</button>
-  </label>
-  <div id="resultError" class="error"></div>
-
-  <div id="resultSection" style="display:none;">
-    <p id="voterCount"></p>
-    <p id="deadlineInfo"></p>
-
-    <table id="resultTable" border="1">
-      <!-- Dynamisch gefüllt -->
-    </table>
-  </div>
+  <div id="results"></div>
 
   <script src="main.js"></script>
 </body>
