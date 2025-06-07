@@ -1,436 +1,395 @@
-// main.js
+// --- Allgemeine Utility-Funktionen ---
 
-// Hilfsfunktionen
-function generateCode() {
-  return Math.floor(10000 + Math.random() * 90000).toString();
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
 }
 
-// --- HOST Seite ---
-if (document.getElementById('hostForm')) {
-  const hostForm = document.getElementById('hostForm');
-  const setSessionBtn = document.getElementById('setSession');
-  const createTableBtn = document.getElementById('createTableLink');
-  const generatedLinkP = document.getElementById('generatedLink');
+function loadData(key) {
+  const d = localStorage.getItem(key);
+  return d ? JSON.parse(d) : null;
+}
 
-  setSessionBtn.onclick = () => {
-    // Validierung + speichern in sessionStorage
-    const year = hostForm.year.value.trim();
-    const className = hostForm.className.value.trim();
-    const categories = hostForm.categories.value.trim();
-    const studentsRaw = hostForm.students.value.trim();
-    const deadline = hostForm.deadline.value;
+// --- Host-Seite ---
 
-    if (!year || !className || !categories || !studentsRaw || !deadline) {
-      alert('Bitte alle Felder ausfüllen.');
+function generateCode() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for(let i=0; i<5; i++) {
+    code += chars.charAt(Math.floor(Math.random()*chars.length));
+  }
+  return code;
+}
+
+function setupHostPage() {
+  // Wird nur auf host.html aufgerufen
+  const form = document.getElementById("hostForm");
+  const createBtn = document.getElementById("createTableBtn");
+  const codeDisplay = document.getElementById("generatedCode");
+  const errorMsg = document.getElementById("hostError");
+
+  if(!form) return;
+
+  createBtn.addEventListener("click", () => {
+    errorMsg.textContent = "";
+
+    // Werte holen
+    const jahr = form.jahr.value.trim();
+    const klasse = form.klasse.value.trim();
+    const kategorienRaw = form.kategorien.value.trim();
+    const schuelerRaw = form.schueler.value.trim();
+    const deadlineStr = form.deadline.value.trim();
+
+    // Validieren
+    if(!jahr || !klasse || !kategorienRaw || !schuelerRaw || !deadlineStr) {
+      errorMsg.textContent = "Bitte alle Felder ausfüllen.";
+      return;
+    }
+    const kategorien = kategorienRaw.split(",").map(s=>s.trim()).filter(s=>s.length>0);
+    if(kategorien.length === 0) {
+      errorMsg.textContent = "Mindestens eine Kategorie angeben.";
       return;
     }
 
-    // Schüler parsen
-    let students = [];
-    const lines = studentsRaw.split('\n').map(l => l.trim()).filter(l => l);
-    for (const line of lines) {
-      const parts = line.split(',');
-      if (parts.length !== 2) {
-        alert('Schülerformat falsch: ' + line);
+    // Schüler parsen: Name, Geschlecht (m/w)
+    // Format: "Max,m" pro Zeile
+    const schuelerLines = schuelerRaw.split("\n").map(s=>s.trim()).filter(s=>s.length>0);
+    const schueler = [];
+    for(const line of schuelerLines) {
+      const parts = line.split(",");
+      if(parts.length !== 2) {
+        errorMsg.textContent = `Ungültiges Format bei Schüler: ${line}. Format: Name,m/w`;
         return;
       }
       const name = parts[0].trim();
       const gender = parts[1].trim().toLowerCase();
-      if (!name || (gender !== 'm' && gender !== 'w')) {
-        alert('Ungültiger Name oder Geschlecht: ' + line);
+      if(!name || (gender !== "m" && gender !== "w")) {
+        errorMsg.textContent = `Ungültiges Format bei Schüler: ${line}. Geschlecht muss m oder w sein.`;
         return;
       }
-      students.push({ name, gender });
+      schueler.push({name, gender});
     }
-
-    // Kategorien parsen
-    const categoriesArr = categories.split(',').map(c => c.trim()).filter(c => c);
-    if (categoriesArr.length === 0) {
-      alert('Bitte mindestens eine Kategorie angeben.');
+    if(schueler.length === 0) {
+      errorMsg.textContent = "Mindestens ein Schüler muss angegeben werden.";
       return;
     }
 
-    // Deadline prüfen
-    const deadlineDate = new Date(deadline);
-    if (isNaN(deadlineDate.getTime())) {
-      alert('Ungültiges Datum.');
+    // Deadline prüfen (Datum)
+    const deadline = new Date(deadlineStr);
+    if(isNaN(deadline.getTime())) {
+      errorMsg.textContent = "Ungültiges Datum für Deadline.";
       return;
     }
-
-    // Objekt speichern in sessionStorage
-    const config = {
-      year,
-      className,
-      categories: categoriesArr,
-      students,
-      deadline
-    };
-
-    sessionStorage.setItem('studentAwardsConfig', JSON.stringify(config));
-    alert('Einstellungen gespeichert.');
-
-    createTableBtn.disabled = false;
-    generatedLinkP.textContent = '';
-  };
-
-  createTableBtn.onclick = () => {
-    // Laden aus sessionStorage
-    const configRaw = sessionStorage.getItem('studentAwardsConfig');
-    if (!configRaw) {
-      alert('Bitte zuerst Einstellungen speichern.');
-      return;
-    }
-    const config = JSON.parse(configRaw);
 
     // Code generieren
-    let code;
-    do {
-      code = generateCode();
-    } while (localStorage.getItem('studentAwards-' + code)); // sicherstellen, dass Code noch nicht existiert
+    const code = generateCode();
 
-    // Setup Abstimmungsdaten: 
-    // Für jede Kategorie & Geschlecht -> null (Enthaltung)
-    // Speichern im localStorage unter 'studentAwards-<code>'
-    // Außerdem speichern: config + votes: [] (Array von Stimmen), votersUsed: [] (Codes, um 2x Abstimmen zu verhindern)
-
-    const votesTemplate = {};
-    for (const category of config.categories) {
-      votesTemplate[category] = { m: null, w: null };
-    }
-
-    const saveObj = {
-      config,
-      votes: [], // jede Stimme ist ein Objekt mit voteData (Kategorie->m/w->Name|null)
-      votersUsed: [],
-      createdAt: new Date().toISOString(),
+    // Speichern unter 'host_'+code
+    const hostData = {
+      jahr,
+      klasse,
+      kategorien,
+      schueler,
+      deadline: deadlineStr,
+      votes: {},      // key: voterId, value: voteObj
+      voters: [],     // Liste voterIds, um Mehrfachabstimmung zu verhindern
     };
+    saveData("host_" + code, hostData);
 
-    localStorage.setItem('studentAwards-' + code, JSON.stringify(saveObj));
-
-    // Link zum Abstimmen erzeugen
-    // Link = aktuelles origin + "/vote.html?code=" + code
-    const baseUrl = window.location.origin + window.location.pathname.replace(/host\.html$/, '');
-    const voteLink = `${baseUrl}vote.html?code=${code}`;
-
-    generatedLinkP.innerHTML = `Link zum Abstimmen: <a href="${voteLink}" target="_blank">${voteLink}</a> <br> 5-stelliger Code: <strong>${code}</strong>`;
-  };
+    // Anzeige
+    codeDisplay.textContent = `Dein Host-Code: ${code}`;
+    createBtn.disabled = true;
+  });
 }
 
-// --- VOTE Seite ---
-if (document.getElementById('voteTable')) {
-  const codeInput = document.getElementById('codeInput');
-  const loadBtn = document.getElementById('loadBtn');
-  const voteTable = document.getElementById('voteTable');
-  const votingArea = document.getElementById('votingArea');
-  const submitVote = document.getElementById('submitVote');
-  const thankYou = document.getElementById('thankYou');
-  const tabBoy = document.getElementById('tabBoy');
-  const tabGirl = document.getElementById('tabGirl');
+function setupVotePage() {
+  const loadBtn = document.getElementById("loadVote");
+  const codeInput = document.getElementById("voteCode");
+  const codeError = document.getElementById("codeError");
+  const voteSection = document.getElementById("voteSection");
+  const voteTable = document.getElementById("voteTable");
+  const submitBtn = document.getElementById("submitVote");
+  const voteMessage = document.getElementById("voteMessage");
+  const tabBoys = document.getElementById("tabBoys");
+  const tabGirls = document.getElementById("tabGirls");
 
-  let currentData = null;
+  let hostData = null;
   let currentCode = null;
-  let currentGender = 'm'; // m = Junge, w = Mädchen
-  let selections = {}; // Kategorie -> Name | null (Enthaltung)
-
-  function resetSelections() {
-    selections = {};
-    if (!currentData) return;
-    for (const cat of currentData.config.categories) {
-      selections[cat] = null;
-    }
-  }
+  let currentGender = "m"; // 'm' Junge, 'w' Mädchen
+  let currentVotes = {}; // Kategorie => Name or '-' (Enthaltung)
 
   function renderTable() {
-    if (!currentData) return;
+    voteTable.innerHTML = "";
 
-    voteTable.innerHTML = '';
-    const header = document.createElement('tr');
-    const thCategory = document.createElement('th');
-    thCategory.textContent = 'Kategorie';
-    header.appendChild(thCategory);
+    // Überschriften
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    const thCat = document.createElement("th");
+    thCat.textContent = "Kategorie";
+    headRow.appendChild(thCat);
+    const thSel = document.createElement("th");
+    thSel.textContent = currentGender === "m" ? "Junge wählen" : "Mädchen wählen";
+    headRow.appendChild(thSel);
+    thead.appendChild(headRow);
+    voteTable.appendChild(thead);
 
-    const thSelection = document.createElement('th');
-    thSelection.textContent = currentGender === 'm' ? 'Junge' : 'Mädchen';
-    header.appendChild(thSelection);
-    voteTable.appendChild(header);
+    // Body
+    const tbody = document.createElement("tbody");
+    for(const kat of hostData.kategorien) {
+      const tr = document.createElement("tr");
 
-    for (const category of currentData.config.categories) {
-      const tr = document.createElement('tr');
-      const tdCat = document.createElement('td');
-      tdCat.textContent = category;
+      const tdCat = document.createElement("td");
+      tdCat.textContent = kat;
       tr.appendChild(tdCat);
 
-      const tdSelect = document.createElement('td');
-      const selectBtn = document.createElement('button');
-      selectBtn.textContent = selections[category] || '- (Enthaltung)';
-      selectBtn.onclick = () => {
-        openSelectionPopup(category);
-      };
-      tdSelect.appendChild(selectBtn);
+      const tdSelect = document.createElement("td");
+
+      // Auswahl: Namen der Schüler filtern nach gender & sortieren
+      const names = hostData.schueler
+        .filter(s => s.gender === currentGender)
+        .map(s => s.name)
+        .sort();
+
+      // Auswahlfeld (Select)
+      const select = document.createElement("select");
+      select.dataset.kategorie = kat;
+      const optionEnthaltung = document.createElement("option");
+      optionEnthaltung.value = "-";
+      optionEnthaltung.textContent = "- (Enthaltung)";
+      select.appendChild(optionEnthaltung);
+
+      for(const name of names) {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      }
+
+      // Vorbelegung falls schon gewählt
+      if(currentVotes[kat]) {
+        select.value = currentVotes[kat];
+      } else {
+        select.value = "-";
+      }
+
+      select.addEventListener("change", () => {
+        currentVotes[kat] = select.value;
+        validateComplete();
+      });
+
+      tdSelect.appendChild(select);
       tr.appendChild(tdSelect);
-
-      voteTable.appendChild(tr);
+      tbody.appendChild(tr);
     }
+
+    voteTable.appendChild(tbody);
   }
 
-  function openSelectionPopup(category) {
-    if (!currentData) return;
-    const students = currentData.config.students.filter(s => s.gender === currentGender);
-    const popup = document.createElement('div');
-    popup.className = 'popup';
-
-    const title = document.createElement('h3');
-    title.textContent = `Wähle für Kategorie "${category}" (${currentGender === 'm' ? 'Junge' : 'Mädchen'})`;
-    popup.appendChild(title);
-
-    const list = document.createElement('ul');
-    list.style.listStyle = 'none';
-    list.style.padding = 0;
-
-    for (const student of students) {
-      const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.textContent = student.name;
-      btn.onclick = () => {
-        selections[category] = student.name;
-        document.body.removeChild(popup);
-        renderTable();
-      };
-      li.appendChild(btn);
-      list.appendChild(li);
-    }
-    // Enthaltung
-    const li = document.createElement('li');
-    const btn = document.createElement('button');
-    btn.textContent = '- (Enthaltung)';
-    btn.onclick = () => {
-      selections[category] = null;
-      document.body.removeChild(popup);
-      renderTable();
-    };
-    li.appendChild(btn);
-    list.appendChild(li);
-
-    popup.appendChild(list);
-
-    // Close on click outside
-    popup.onclick = (e) => {
-      if (e.target === popup) {
-        document.body.removeChild(popup);
-      }
-    };
-
-    Object.assign(popup.style, {
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      background: 'white',
-      border: '2px solid black',
-      padding: '1rem',
-      zIndex: 1000,
-      maxHeight: '80vh',
-      overflowY: 'auto',
-    });
-
-    document.body.appendChild(popup);
+  function validateComplete() {
+    // Alle Kategorien müssen eine Auswahl haben (auch Enthaltung erlaubt)
+    const allFilled = hostData.kategorien.every(kat => currentVotes.hasOwnProperty(kat));
+    submitBtn.disabled = !allFilled;
   }
 
-  function validateAllSelected() {
-    if (!currentData) return false;
-    for (const category of currentData.config.categories) {
-      if (!(category in selections)) return false;
-    }
-    return true;
-  }
+  loadBtn.addEventListener("click", () => {
+    const code = codeInput.value.trim().toUpperCase();
+    codeError.textContent = "";
+    voteMessage.textContent = "";
 
-  loadBtn.onclick = () => {
-    const code = codeInput.value.trim();
-    if (code.length !== 5) {
-      alert('Bitte gültigen 5-stelligen Code eingeben.');
+    if(code.length !== 5) {
+      codeError.textContent = "Code muss 5 Zeichen lang sein.";
       return;
     }
-    const dataRaw = localStorage.getItem('studentAwards-' + code);
-    if (!dataRaw) {
-      alert('Code nicht gefunden.');
+
+    const data = loadData("host_" + code);
+    if(!data) {
+      codeError.textContent = "Kein gültiger Code gefunden.";
       return;
     }
-    currentData = JSON.parse(dataRaw);
+
+    // Deadline prüfen: Ist noch offen?
+    const deadlineDate = new Date(data.deadline);
+    const now = new Date();
+    if(now > deadlineDate) {
+      codeError.textContent = "Deadline für Abstimmung ist vorbei.";
+      return;
+    }
+
+    // Prüfen, ob schon abgestimmt wurde: voterId = zufällige ID pro Nutzer im LocalStorage
     currentCode = code;
+    hostData = data;
 
-    // Prüfen ob Deadline schon abgelaufen
-    const deadlineDate = new Date(currentData.config.deadline);
-    const now = new Date();
-    if (now > deadlineDate) {
-      alert('Deadline ist bereits abgelaufen. Abstimmung nicht mehr möglich.');
+    // VoterId im LocalStorage oder neu
+    let voterId = localStorage.getItem("voterId");
+    if(!voterId) {
+      voterId = Math.random().toString(36).substr(2, 9);
+      localStorage.setItem("voterId", voterId);
+    }
+
+    if(hostData.voters.includes(voterId)) {
+      codeError.textContent = "Sie haben bereits abgestimmt.";
       return;
     }
 
-    // Prüfen ob schon abgestimmt wurde (für diese Seite: prüfen anhand code im sessionStorage)
-    const votedCodes = JSON.parse(sessionStorage.getItem('studentAwards-votedCodes') || '[]');
-    if (votedCodes.includes(code)) {
-      alert('Du hast bereits abgestimmt.');
-      return;
-    }
+    // Vote-Bereich zeigen, Code-Eingabe ausblenden
+    document.getElementById("codeInputSection").style.display = "none";
+    voteSection.style.display = "block";
 
-    resetSelections();
-    votingArea.style.display = 'block';
-    thankYou.style.display = 'none';
+    // Startwerte
+    currentVotes = {};
+    currentGender = "m";
+
     renderTable();
-  };
+    validateComplete();
+  });
 
-  tabBoy.onclick = () => {
-    currentGender = 'm';
-    tabBoy.classList.add('active');
-    tabGirl.classList.remove('active');
+  // Tabs für Junge / Mädchen
+  tabBoys.addEventListener("click", () => {
+    currentGender = "m";
+    tabBoys.classList.add("active");
+    tabGirls.classList.remove("active");
     renderTable();
-  };
+  });
 
-  tabGirl.onclick = () => {
-    currentGender = 'w';
-    tabGirl.classList.add('active');
-    tabBoy.classList.remove('active');
+  tabGirls.addEventListener("click", () => {
+    currentGender = "w";
+    tabGirls.classList.add("active");
+    tabBoys.classList.remove("active");
     renderTable();
-  };
+  });
 
-  submitVote.onclick = () => {
-    if (!validateAllSelected()) {
-      alert('Bitte in allen Kategorien eine Auswahl treffen oder Enthaltung wählen.');
-      return;
-    }
-    // Speichern der Stimme
-    // Für Gleichzeitigkeit einfach votes.push({ selections }) an votes Array
-    const dataRaw = localStorage.getItem('studentAwards-' + currentCode);
-    if (!dataRaw) {
-      alert('Daten nicht gefunden.');
-      return;
-    }
-    const dataObj = JSON.parse(dataRaw);
+  submitBtn.addEventListener("click", () => {
+    voteMessage.textContent = "";
 
-    // Prüfen ob Code schon abgestimmt hat
-    if (dataObj.votersUsed.includes(currentCode)) {
-      alert('Du hast bereits abgestimmt.');
+    // Prüfen, ob alle Kategorien ausgefüllt sind
+    const missing = hostData.kategorien.filter(kat => !currentVotes[kat]);
+    if(missing.length > 0) {
+      voteMessage.textContent = "Bitte für alle Kategorien eine Auswahl treffen.";
       return;
     }
 
-    dataObj.votes.push({ selections });
-    dataObj.votersUsed.push(currentCode);
-    localStorage.setItem('studentAwards-' + currentCode, JSON.stringify(dataObj));
+    // VoterId aus LocalStorage
+    let voterId = localStorage.getItem("voterId");
+    if(!voterId) {
+      voteMessage.textContent = "Fehler: Keine Voter-ID gefunden.";
+      return;
+    }
 
-    // Session merken, dass Code abgestimmt hat
-    const votedCodes = JSON.parse(sessionStorage.getItem('studentAwards-votedCodes') || '[]');
-    votedCodes.push(currentCode);
-    sessionStorage.setItem('studentAwards-votedCodes', JSON.stringify(votedCodes));
+    if(hostData.voters.includes(voterId)) {
+      voteMessage.textContent = "Sie haben bereits abgestimmt.";
+      return;
+    }
 
-    votingArea.style.display = 'none';
-    thankYou.style.display = 'block';
-    thankYou.textContent = 'Vielen Dank für deine Abstimmung!';
+    // Abstimmung speichern
+    hostData.votes[voterId] = {...currentVotes};
+    hostData.voters.push(voterId);
 
-  };
+    saveData("host_" + currentCode, hostData);
+
+    submitBtn.disabled = true;
+    voteMessage.textContent = "Vielen Dank für Ihre Abstimmung!";
+  });
 }
 
-// --- RESULTS Seite ---
-if (document.querySelector('body') && document.getElementById('votersCount')) {
-  const codeInput = document.getElementById('codeInput');
-  const loadBtn = document.getElementById('loadBtn');
-  const votersCount = document.getElementById('votersCount');
-  const deadlineInfo = document.getElementById('deadlineInfo');
-  const winnersDiv = document.getElementById('winners');
+function setupResultPage() {
+  const hostCodeInput = document.getElementById("hostCodeInput");
+  const loadResultsBtn = document.getElementById("loadResults");
+  const hostCodeError = document.getElementById("hostCodeError");
+  const resultsSection = document.getElementById("resultsSection");
+  const resultsOutput = document.getElementById("resultsOutput");
+  const voteCountSpan = document.getElementById("voteCount");
+  const deadlineInfo = document.getElementById("deadlineInfo");
 
-  loadBtn.onclick = () => {
-    const code = codeInput.value.trim();
-    if (code.length !== 5) {
-      alert('Bitte gültigen 5-stelligen Code eingeben.');
-      return;
-    }
-    const dataRaw = localStorage.getItem('studentAwards-' + code);
-    if (!dataRaw) {
-      alert('Code nicht gefunden.');
-      return;
-    }
-    const dataObj = JSON.parse(dataRaw);
+  loadResultsBtn.addEventListener("click", () => {
+    hostCodeError.textContent = "";
+    resultsOutput.innerHTML = "";
+    voteCountSpan.textContent = "";
+    deadlineInfo.textContent = "";
 
-    const deadlineDate = new Date(dataObj.config.deadline);
-    const now = new Date();
-
-    if (now < deadlineDate) {
-      alert(`Deadline ist noch nicht erreicht (erst am ${dataObj.config.deadline}).`);
+    const code = hostCodeInput.value.trim().toUpperCase();
+    if(code.length !== 5) {
+      hostCodeError.textContent = "Code muss 5 Zeichen lang sein.";
       return;
     }
 
-    // Zeige Anzahl Abstimmende (Zähler)
-    votersCount.textContent = dataObj.votes.length;
-
-    // Zeige Deadline
-    deadlineInfo.textContent = `Deadline war am: ${dataObj.config.deadline}`;
-
-    // Ergebnisse auswerten
-    // Struktur: Kategorie -> Geschlecht -> Kandidat -> Stimmenanzahl
-    const results = {};
-    for (const category of dataObj.config.categories) {
-      results[category] = { m: {}, w: {} };
+    const data = loadData("host_" + code);
+    if(!data) {
+      hostCodeError.textContent = "Kein gültiger Host-Code gefunden.";
+      return;
     }
 
-    for (const vote of dataObj.votes) {
-      for (const category of dataObj.config.categories) {
-        const nameM = vote.selections[category];
-        if (nameM && dataObj.config.students.some(s => s.name === nameM && s.gender === 'm')) {
-          results[category].m[nameM] = (results[category].m[nameM] || 0) + 1;
+    // Deadline anzeigen
+    deadlineInfo.textContent = "Abstimmungsdeadline: " + data.deadline;
+
+    // Anzahl Abstimmungen
+    const voteCount = data.voters.length;
+    voteCountSpan.textContent = voteCount;
+
+    if(voteCount === 0) {
+      resultsOutput.textContent = "Noch keine Abstimmungen vorhanden.";
+      resultsSection.style.display = "block";
+      return;
+    }
+
+    // Ergebnis-Auswertung: pro Kategorie die Stimmen zählen
+    const counts = {}; // kat -> name -> count
+
+    for(const kat of data.kategorien) {
+      counts[kat] = {};
+    }
+
+    for(const voteId in data.votes) {
+      const vote = data.votes[voteId];
+      for(const kat in vote) {
+        const name = vote[kat];
+        if(name && name !== "-") {
+          if(!counts[kat][name]) counts[kat][name] = 0;
+          counts[kat][name]++;
         }
-        if (nameM && dataObj.config.students.some(s => s.name === nameM && s.gender === 'w')) {
-          results[category].w[nameM] = (results[category].w[nameM] || 0) + 1;
+      }
+    }
+
+    // Ergebnisse tabellarisch ausgeben
+    for(const kat of data.kategorien) {
+      const katDiv = document.createElement("div");
+      katDiv.classList.add("result-category");
+      const title = document.createElement("h3");
+      title.textContent = kat;
+      katDiv.appendChild(title);
+
+      const ul = document.createElement("ul");
+
+      // Sortiere Namen nach Anzahl absteigend
+      const sorted = Object.entries(counts[kat]).sort((a,b) => b[1]-a[1]);
+
+      if(sorted.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "Keine Stimmen";
+        ul.appendChild(li);
+      } else {
+        for(const [name,count] of sorted) {
+          const li = document.createElement("li");
+          li.textContent = `${name}: ${count} Stimme${count > 1 ? "n" : ""}`;
+          ul.appendChild(li);
         }
       }
+
+      katDiv.appendChild(ul);
+      resultsOutput.appendChild(katDiv);
     }
 
-    // Gewinner ermitteln per Kategorie & Geschlecht
-    winnersDiv.innerHTML = '';
-
-    // --- Fortsetzung RESULTS Seite ---
-
-    for (const category of dataObj.config.categories) {
-      const catDiv = document.createElement('div');
-      catDiv.style.marginBottom = '1rem';
-
-      const catTitle = document.createElement('h3');
-      catTitle.textContent = `Kategorie: ${category}`;
-      catDiv.appendChild(catTitle);
-
-      // Für Jungen (m)
-      const mResults = results[category].m;
-      const mEntries = Object.entries(mResults);
-      if (mEntries.length === 0) {
-        const p = document.createElement('p');
-        p.textContent = 'Keine Stimmen für Jungen.';
-        catDiv.appendChild(p);
-      } else {
-        // Max Stimmen finden
-        let maxVotesM = Math.max(...mEntries.map(([_, count]) => count));
-        const winnersM = mEntries.filter(([_, count]) => count === maxVotesM).map(([name]) => name);
-
-        const pM = document.createElement('p');
-        pM.innerHTML = `<strong>Jungen Gewinner:</strong> ${winnersM.join(', ')} (${maxVotesM} Stimme${maxVotesM > 1 ? 'n' : ''})`;
-        catDiv.appendChild(pM);
-      }
-
-      // Für Mädchen (w)
-      const wResults = results[category].w;
-      const wEntries = Object.entries(wResults);
-      if (wEntries.length === 0) {
-        const p = document.createElement('p');
-        p.textContent = 'Keine Stimmen für Mädchen.';
-        catDiv.appendChild(p);
-      } else {
-        // Max Stimmen finden
-        let maxVotesW = Math.max(...wEntries.map(([_, count]) => count));
-        const winnersW = wEntries.filter(([_, count]) => count === maxVotesW).map(([name]) => name);
-
-        const pW = document.createElement('p');
-        pW.innerHTML = `<strong>Mädchen Gewinner:</strong> ${winnersW.join(', ')} (${maxVotesW} Stimme${maxVotesW > 1 ? 'n' : ''})`;
-        catDiv.appendChild(pW);
-      }
-
-      winnersDiv.appendChild(catDiv);
-    }
-  };
+    resultsSection.style.display = "block";
+  });
 }
+
+// --- Initialisierung je nach Seite ---
+document.addEventListener("DOMContentLoaded", () => {
+  if(document.body.querySelector("#hostForm")) {
+    setupHostPage();
+  }
+  if(document.body.querySelector("#loadVote")) {
+    setupVotePage();
+  }
+  if(document.body.querySelector("#loadResults")) {
+    setupResultPage();
+  }
+});
