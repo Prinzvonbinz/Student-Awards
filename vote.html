@@ -1,16 +1,164 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Abstimmung</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Awards - Abstimmung</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Student Awards - Abstimmung</h1>
-  <div id="voteArea"></div>
-  <button id="submitVote">Abgeben</button>
-  <div id="message"></div>
+
+  <div id="vote-container" style="display:none;">
+    <table id="vote-table" border="1" cellspacing="0" cellpadding="5">
+      <thead>
+        <tr>
+          <th>Kategorie</th>
+          <th>Junge</th>
+          <th>Mädchen</th>
+        </tr>
+      </thead>
+      <tbody id="vote-tbody"></tbody>
+    </table>
+    <button id="submit-vote">Abgeben</button>
+  </div>
+
+  <div id="message" style="margin-top:20px;"></div>
 
   <script src="main.js"></script>
+  <script>
+    // Beim Laden der Seite:
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+
+      if (!code) {
+        document.getElementById('message').textContent = 'Kein Code angegeben.';
+        return;
+      }
+
+      // Versuche Daten aus localStorage zu laden
+      const dataJSON = localStorage.getItem(code);
+      if (!dataJSON) {
+        document.getElementById('message').textContent = 'Ungültiger oder unbekannter Code.';
+        return;
+      }
+
+      const data = JSON.parse(dataJSON);
+
+      // Prüfen, ob schon abgestimmt wurde (pro localStorage key: 'voted_'+code)
+      if (localStorage.getItem('voted_' + code)) {
+        document.getElementById('message').textContent = 'Du hast bereits abgestimmt. Vielen Dank!';
+        return;
+      }
+
+      // Daten für Kategorien, Schüler
+      const categories = data.categories;
+      const students = data.students;
+
+      // Filter Schüler nach Geschlecht
+      const boys = students.filter(s => s.gender === 'm');
+      const girls = students.filter(s => s.gender === 'w');
+
+      // Vote-Tabelle füllen
+      const tbody = document.getElementById('vote-tbody');
+      tbody.innerHTML = '';
+
+      categories.forEach(cat => {
+        const tr = document.createElement('tr');
+
+        // Kategorie Name
+        const tdCat = document.createElement('td');
+        tdCat.textContent = cat;
+        tr.appendChild(tdCat);
+
+        // Junge Zelle mit Dropdown
+        const tdBoy = document.createElement('td');
+        const selectBoy = document.createElement('select');
+        selectBoy.name = `vote_${cat}_m`;
+
+        // Option „Enthaltung“ mit "-"
+        const optionSkipBoy = document.createElement('option');
+        optionSkipBoy.value = '-';
+        optionSkipBoy.textContent = '-';
+        selectBoy.appendChild(optionSkipBoy);
+
+        boys.forEach(boy => {
+          const option = document.createElement('option');
+          option.value = boy.name;
+          option.textContent = boy.name;
+          selectBoy.appendChild(option);
+        });
+
+        tdBoy.appendChild(selectBoy);
+        tr.appendChild(tdBoy);
+
+        // Mädchen Zelle mit Dropdown
+        const tdGirl = document.createElement('td');
+        const selectGirl = document.createElement('select');
+        selectGirl.name = `vote_${cat}_w`;
+
+        const optionSkipGirl = document.createElement('option');
+        optionSkipGirl.value = '-';
+        optionSkipGirl.textContent = '-';
+        selectGirl.appendChild(optionSkipGirl);
+
+        girls.forEach(girl => {
+          const option = document.createElement('option');
+          option.value = girl.name;
+          option.textContent = girl.name;
+          selectGirl.appendChild(option);
+        });
+
+        tdGirl.appendChild(selectGirl);
+        tr.appendChild(tdGirl);
+
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('vote-container').style.display = 'block';
+
+      // Submit Button Event
+      document.getElementById('submit-vote').addEventListener('click', () => {
+        const votes = {};
+        let allFilled = true;
+
+        // Pro Kategorie und Geschlecht Wert auslesen
+        categories.forEach(cat => {
+          const boySelect = document.querySelector(`select[name="vote_${cat}_m"]`);
+          const girlSelect = document.querySelector(`select[name="vote_${cat}_w"]`);
+          if (!boySelect || !girlSelect) {
+            allFilled = false;
+            return;
+          }
+
+          if (!boySelect.value) allFilled = false;
+          if (!girlSelect.value) allFilled = false;
+
+          votes[`${cat}_m`] = boySelect.value;
+          votes[`${cat}_w`] = girlSelect.value;
+        });
+
+        if (!allFilled) {
+          alert('Bitte alle Felder ausfüllen oder "-" für Enthaltung wählen.');
+          return;
+        }
+
+        // Speichere Stimmen im localStorage: key = 'votes_' + code + '_' + random voter id
+        // Voter id hier anonym: random 8-stellig
+        const voterId = Math.random().toString(36).substr(2,8);
+
+        const votesKey = `votes_${code}_${voterId}`;
+        localStorage.setItem(votesKey, JSON.stringify(votes));
+
+        // Markiere als abgestimmt
+        localStorage.setItem('voted_' + code, 'true');
+
+        // Danke Nachricht anzeigen
+        document.getElementById('vote-container').style.display = 'none';
+        document.getElementById('message').textContent = 'Danke für deine Abstimmung!';
+      });
+    });
+  </script>
 </body>
 </html>
