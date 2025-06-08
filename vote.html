@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student Awards – Abstimmung</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abstimmen</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Student Awards – Abstimmung</h1>
-  <label>Code: <input type="text" id="codeInput" /></label>
-  <button onclick="loadVoting()">Starten</button>
-
-  <div id="votingSection" style="display: none;"></div>
-  <button id="submitBtn" onclick="submitVote()" style="display: none;">Abgeben</button>
+  <h1>Abstimmung</h1>
+  <div id="voteContainer"></div>
+  <button id="submitVote">Abstimmen</button>
 
   <script src="main.js"></script>
+  <script>
+    window.onload = loadVotePage;
+  </script>
 </body>
 </html>
