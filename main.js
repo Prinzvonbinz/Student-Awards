@@ -1,144 +1,174 @@
-const HOST_KEY = "student_awards_hosts";
-const VOTE_KEY = "student_awards_votes";
-
-// Speicher-Utils
-function saveToStorage(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function loadFromStorage(key) {
-  return JSON.parse(localStorage.getItem(key) || "[]");
-}
-
-// Random-Code Generator
-function generateCode(length = 5) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < length; i++) {
+function generateCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 5; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
 }
 
-// Host-Funktionen
-function createHostConfig(form) {
-  const jahr = form.jahr.value;
-  const klasse = form.klasse.value;
-  const kategorien = form.kategorien.value.split(",").map(k => k.trim());
-  const schueler = form.schueler.value.split("\n").map(s => {
-    const [name, gender] = s.split(",").map(x => x.trim());
-    return { name, gender };
-  });
-  const deadline = form.deadline.value;
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("createForm");
+  const voteContainer = document.getElementById("voteContainer");
+  const resultContainer = document.getElementById("resultContainer");
 
-  const code = generateCode();
-  const hostConfigs = loadFromStorage(HOST_KEY);
-  hostConfigs.push({
-    code,
-    jahr,
-    klasse,
-    kategorien,
-    schueler,
-    deadline,
-    created: Date.now(),
-    votes: [],
-    link: location.origin + location.pathname + "?vote=" + code,
-    resultLink: location.origin + location.pathname + "?result=" + code
-  });
-  saveToStorage(HOST_KEY, hostConfigs);
-  return { code, voteLink: hostConfigs.at(-1).link, resultLink: hostConfigs.at(-1).resultLink };
-}
+  // Host-Seite
+  if (form) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
 
-function getHostConfigByCode(code) {
-  return loadFromStorage(HOST_KEY).find(cfg => cfg.code === code);
-}
+      const jahr = document.getElementById("jahr").value;
+      const klasse = document.getElementById("klasse").value;
+      const kategorien = document.getElementById("kategorien").value.split(",").map(k => k.trim());
+      const deadline = document.getElementById("deadline").value;
+      const schuelerRaw = document.getElementById("schueler").value.trim().split("\n");
 
-function saveVote(code, newVote) {
-  const hostConfigs = loadFromStorage(HOST_KEY);
-  const config = hostConfigs.find(cfg => cfg.code === code);
-  if (!config) return false;
+      const schueler = schuelerRaw.map(line => {
+        const [name, gender] = line.trim().split(",");
+        return { name: name.trim(), gender: gender.trim().toLowerCase() };
+      });
 
-  const exists = config.votes.some(v => v.id === newVote.id);
-  if (!exists) {
-    config.votes.push(newVote);
-    saveToStorage(HOST_KEY, hostConfigs);
-    return true;
-  }
-  return false;
-}
+      const code = generateCode();
+      localStorage.setItem(`host_${code}`, JSON.stringify({
+        jahr,
+        klasse,
+        kategorien,
+        deadline,
+        schueler,
+        votes: []
+      }));
 
-function getVotesByCode(code) {
-  const config = getHostConfigByCode(code);
-  return config ? config.votes : [];
-}
-
-function getVoteCount(code) {
-  const config = getHostConfigByCode(code);
-  return config ? config.votes.length : 0;
-}
-
-function getTotalVoters(code) {
-  const config = getHostConfigByCode(code);
-  return config ? config.schueler.length : 0;
-}
-// Ergebnisberechnung
-function calculateResults(code) {
-  const config = getHostConfigByCode(code);
-  if (!config) return null;
-
-  const results = {};
-  const now = new Date();
-  const deadline = new Date(config.deadline);
-  if (now < deadline) return "too_early";
-
-  for (const kat of config.kategorien) {
-    results[kat] = { m: {}, w: {} };
+      const linkArea = document.getElementById("linkArea");
+      linkArea.innerHTML = `
+        <p><strong>Stimmabgabe-Link:</strong><br>
+        <a href="vote.html?code=${code}" target="_blank">${window.location.origin}/vote.html?code=${code}</a></p>
+        <p><strong>Ergebnis-Link (nur Host, nach Deadline sichtbar):</strong><br>
+        <a href="result.html?code=${code}" target="_blank">${window.location.origin}/result.html?code=${code}</a></p>
+      `;
+    });
   }
 
-  for (const vote of config.votes) {
-    for (const kat of config.kategorien) {
-      const selected = vote.selection[kat];
-      if (selected !== "-") {
-        const gender = config.schueler.find(s => s.name === selected)?.gender;
-        if (gender && results[kat][gender]) {
-          results[kat][gender][selected] = (results[kat][gender][selected] || 0) + 1;
+  // Abstimmungs-Seite
+  if (voteContainer) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    const data = JSON.parse(localStorage.getItem(`host_${code}`));
+
+    if (!data) {
+      voteContainer.innerHTML = "<p>Ungültiger Code.</p>";
+      return;
+    }
+
+    if (localStorage.getItem(`voted_${code}`)) {
+      voteContainer.innerHTML = "<p>Du hast bereits abgestimmt. Danke!</p>";
+      return;
+    }
+
+    voteContainer.innerHTML = `
+      <h2>Abstimmung für Klasse ${data.klasse} (${data.jahr})</h2>
+      <form id="voteForm"></form>
+      <button id="submitVote">Abgeben</button>
+    `;
+
+    const voteForm = document.getElementById("voteForm");
+    data.kategorien.forEach(kat => {
+      const section = document.createElement("div");
+      section.innerHTML = `<h3>${kat}</h3>
+        <label>Junge:</label>
+        <select name="${kat}_m"><option value="">–</option></select>
+        <label>Mädchen:</label>
+        <select name="${kat}_w"><option value="">–</option></select>
+        <hr>`;
+      voteForm.appendChild(section);
+    });
+
+    data.schueler.forEach(s => {
+      data.kategorien.forEach(kat => {
+        const select = voteForm.querySelector(`select[name="${kat}_${s.gender.charAt(0)}"]`);
+        if (select) {
+          const option = document.createElement("option");
+          option.value = s.name;
+          option.textContent = s.name;
+          select.appendChild(option);
         }
+      });
+    });
+
+    document.getElementById("submitVote").addEventListener("click", () => {
+      const inputs = voteForm.querySelectorAll("select");
+      const vote = {};
+      let valid = true;
+      inputs.forEach(select => {
+        if (select.value === "") valid = false;
+        const key = select.name;
+        vote[key] = select.value;
+      });
+
+      if (!valid) {
+        alert("Bitte stimme in allen Kategorien ab.");
+        return;
       }
-    }
+
+      const db = JSON.parse(localStorage.getItem(`host_${code}`));
+      db.votes.push(vote);
+      localStorage.setItem(`host_${code}`, JSON.stringify(db));
+      localStorage.setItem(`voted_${code}`, "true");
+
+      voteContainer.innerHTML = "<p>Danke für deine Abstimmung!</p>";
+    });
   }
 
-  const finalWinners = {};
-  for (const kat of config.kategorien) {
-    finalWinners[kat] = { m: [], w: [] };
-    for (const g of ["m", "w"]) {
-      const entries = Object.entries(results[kat][g]);
-      if (entries.length === 0) continue;
-      const max = Math.max(...entries.map(e => e[1]));
-      finalWinners[kat][g] = entries.filter(e => e[1] === max).map(e => ({ name: e[0], votes: e[1] }));
-    }
-  }
-  return finalWinners;
-}
+  // Ergebnis-Seite
+  if (resultContainer) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    const data = JSON.parse(localStorage.getItem(`host_${code}`));
 
-// UI: Ergebnisse anzeigen
-function showResults(resultData, containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = "";
-  for (const [kat, genders] of Object.entries(resultData)) {
-    const block = document.createElement("div");
-    block.className = "result-block";
-    block.innerHTML = `<h3>${kat}</h3>`;
-    for (const g of ["m", "w"]) {
-      const title = g === "m" ? "Jungen" : "Mädchen";
-      const names = genders[g].map(e => `${e.name} (${e.votes})`).join(", ") || "–";
-      block.innerHTML += `<p><strong>${title}:</strong> ${names}</p>`;
+    if (!data) {
+      resultContainer.innerHTML = "<p>Ungültiger Code.</p>";
+      return;
     }
-    container.appendChild(block);
-  }
-}
 
-// UI: Fehlermeldung anzeigen
-function showError(containerId, msg) {
-  const el = document.getElementById(containerId);
-  if (el) el.innerHTML = `<p class="error">${msg}</p>`;
-}
+    const today = new Date().toISOString().split("T")[0];
+    if (today < data.deadline) {
+      resultContainer.innerHTML = `<p>Ergebnisse sind erst nach dem ${data.deadline} verfügbar.</p>`;
+      return;
+    }
+
+    const auswertung = {};
+    data.kategorien.forEach(kat => {
+      auswertung[kat] = { m: {}, w: {} };
+    });
+
+    data.votes.forEach(vote => {
+      Object.entries(vote).forEach(([key, value]) => {
+        const [kat, gender] = key.split("_");
+        if (value !== "") {
+          if (!auswertung[kat][gender][value]) {
+            auswertung[kat][gender][value] = 0;
+          }
+          auswertung[kat][gender][value]++;
+        }
+      });
+    });
+
+    resultContainer.innerHTML = `<h2>Ergebnisse für ${data.klasse} (${data.jahr})</h2>`;
+    data.kategorien.forEach(kat => {
+      const block = document.createElement("div");
+      block.innerHTML = `<h3>${kat}</h3>`;
+
+      ["m", "w"].forEach(g => {
+        const map = auswertung[kat][g];
+        const maxVotes = Math.max(...Object.values(map));
+        const gewinner = Object.entries(map)
+          .filter(([_, v]) => v === maxVotes)
+          .map(([name]) => name);
+
+        block.innerHTML += `<strong>${g === "m" ? "Junge" : "Mädchen"}:</strong> ${gewinner.join(", ")} (${maxVotes} Stimmen)<br>`;
+      });
+
+      block.innerHTML += "<hr>";
+      resultContainer.appendChild(block);
+    });
+  }
+});
