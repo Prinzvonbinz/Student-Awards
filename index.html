@@ -1,117 +1,39 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Student Awards - Host Menü</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Awards - Host Menü</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Host Menü</h1>
+  <main class="container">
+    <h1>Student Awards - Host Menü</h1>
+    <form id="hostForm">
+      <label for="year">Jahr:</label>
+      <input type="number" id="year" name="year" min="2000" max="2100" required value="2025" />
 
-  <label for="year">Jahr:</label><br />
-  <input type="number" id="year" value="2025" min="2025" max="2100" /><br /><br />
+      <label for="class">Klasse:</label>
+      <input type="text" id="class" name="class" placeholder="z.B. 10b" required />
 
-  <label for="class">Klasse:</label><br />
-  <input type="text" id="class" placeholder="z.B. 10b" /><br /><br />
+      <label for="categories">Kategorien (kommagetrennt):</label>
+      <input type="text" id="categories" name="categories" placeholder="Lustig, sportlich, kreativ" required />
 
-  <label for="categories">Kategorien (kommagetrennt):</label><br />
-  <input type="text" id="categories" placeholder="z.B. Lustig, Sportlich, Hilfsbereit" /><br /><br />
+      <label for="students">Schüler (Name, m/w pro Zeile, durch Komma getrennt):</label>
+      <textarea id="students" name="students" placeholder="Max, m\nAnna, w\n..." required rows="8"></textarea>
 
-  <label for="students">Schüler (Name, m/w, je 1 pro Zeile, z.B. Max,m):</label><br />
-  <textarea id="students" rows="8" placeholder="Max,m&#10;Anna,w&#10;Lukas,m"></textarea><br /><br />
+      <label for="deadline">Deadline (Ergebnisse sichtbar ab):</label>
+      <input type="date" id="deadline" name="deadline" required />
 
-  <label for="deadline">Deadline (Datum für Ergebnis):</label><br />
-  <input type="date" id="deadline" /><br /><br />
+      <button type="submit">Einstellen</button>
+    </form>
 
-  <button id="generateButton">Tabelle erstellen & Link generieren</button>
+    <section id="generateSection" style="display:none; margin-top: 1em;">
+      <button id="generateTableLink">Tabelle erstellen &amp; Link generieren</button>
+      <div id="links" style="margin-top: 1em;"></div>
+    </section>
+  </main>
 
-  <div id="linksContainer" style="margin-top:20px;"></div>
-
-  <script>
-    // Hilfsfunktion: 5-stelliger Code
-    function generateCode() {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let code = '';
-      for (let i = 0; i < 5; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return code;
-    }
-
-    document.getElementById('generateButton').addEventListener('click', () => {
-      // Werte aus Formular holen
-      const year = document.getElementById('year').value.trim();
-      const className = document.getElementById('class').value.trim();
-      const categoriesStr = document.getElementById('categories').value.trim();
-      const studentsStr = document.getElementById('students').value.trim();
-      const deadline = document.getElementById('deadline').value;
-
-      // Validierung
-      if (!year || !className || !categoriesStr || !studentsStr || !deadline) {
-        alert('Bitte alle Felder ausfüllen!');
-        return;
-      }
-
-      const categories = categoriesStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
-      if (categories.length === 0) {
-        alert('Bitte mindestens eine Kategorie angeben!');
-        return;
-      }
-
-      // Schüler parsen
-      const students = studentsStr.split('\n').map(line => {
-        const parts = line.split(',');
-        if (parts.length !== 2) return null;
-        return { name: parts[0].trim(), gender: parts[1].trim().toLowerCase() };
-      }).filter(s => s && (s.gender === 'm' || s.gender === 'w'));
-
-      if (students.length === 0) {
-        alert('Bitte mindestens einen gültigen Schüler eintragen (Name,m/w)!');
-        return;
-      }
-
-      // Deadline prüfen (Datum in der Zukunft)
-      const deadlineDate = new Date(deadline);
-      const now = new Date();
-      if (deadlineDate <= now) {
-        alert('Die Deadline muss in der Zukunft liegen!');
-        return;
-      }
-
-      // Code generieren
-      const code = generateCode();
-
-      // Daten speichern in localStorage unter dem Code als Key
-      const data = {
-        year,
-        className,
-        categories,
-        students,
-        deadline,
-        votes: [],   // Hier speichern wir später die abgegebenen Stimmen
-        votedUsers: [] // Für Verhindern von mehrfach Abstimmung
-      };
-
-      localStorage.setItem('studentAwards_' + code, JSON.stringify(data));
-
-      // Base URL deiner GitHub Pages (bitte anpassen)
-      const baseUrl = 'https://dein-github.github.io';
-
-      // Zwei unterschiedliche Links generieren
-      const votingLink = `${baseUrl}/vote.html?code=${code}`;
-      const resultLink = `${baseUrl}/result.html?code=${code}`;
-
-      const container = document.getElementById('linksContainer');
-      container.innerHTML = `
-        <h2>Links für Teilnehmer und Host</h2>
-        <p><strong>Abstimmungs-Link (für Schüler):</strong><br />
-        <a href="${votingLink}" target="_blank">${votingLink}</a></p>
-        <p><strong>Ergebnis-Link (für Host, nach Deadline):</strong><br />
-        <a href="${resultLink}" target="_blank">${resultLink}</a></p>
-        <p><em>Bitte speichere diese Links sicher!</em></p>
-      `;
-    });
-  </script>
+  <script src="main.js"></script>
 </body>
 </html>
