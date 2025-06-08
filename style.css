@@ -1,27 +1,36 @@
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f5f5f5;
+  font-family: sans-serif;
+  background-color: #f9f9f9;
   padding: 20px;
   color: #333;
 }
-input, textarea, button, select {
-  margin: 5px 0;
-  padding: 8px;
-  font-size: 16px;
+
+h1 {
+  color: #4b0082;
 }
+
+textarea, input, select {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 10px;
+}
+
 button {
-  background-color: #4CAF50;
+  background-color: #4b0082;
   color: white;
+  padding: 10px 20px;
   border: none;
   cursor: pointer;
-}
-button:hover {
-  background-color: #45a049;
-}
-h1 {
-  color: #222;
-}
-label {
-  display: block;
   margin-top: 10px;
+}
+
+button:hover {
+  background-color: #3a0066;
+}
+
+.resultCategory {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #eaeaea;
+  border-radius: 6px;
 }
