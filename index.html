@@ -3,32 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student Awards – Host</title>
+  <title>Student Awards - Host</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student-Awards – Host-Menü</h1>
+  <h1>Student Awards – Host Menü</h1>
 
-  <form id="createForm">
-    <label>Jahr:
-      <input type="number" id="jahr" required min="2024" value="2025">
-    </label><br>
-    <label>Klasse:
-      <input type="text" id="klasse" required placeholder="z.B. 10b">
-    </label><br>
-    <label>Kategorien (kommagetrennt):
-      <input type="text" id="kategorien" required placeholder="Lustig, Sportlich, ...">
-    </label><br>
-    <label>Schüler (Name, m/w) – ein Name pro Zeile:
-      <textarea id="schueler" required rows="8" placeholder="Max Mustermann, m&#10;Anna Musterfrau, w"></textarea>
-    </label><br>
-    <label>Deadline:
-      <input type="date" id="deadline" required>
-    </label><br>
-    <button type="submit">Einstellen</button>
-  </form>
+  <label>Jahr: <input type="number" id="year" value="2025" /></label><br />
+  <label>Klasse: <input type="text" id="class" /></label><br />
+  <label>Kategorien (kommagetrennt):<br />
+    <input type="text" id="categories" placeholder="Lustig, Sportlich, ..."/>
+  </label><br />
+  <label>Schülerliste (Name,m/w pro Zeile):<br />
+    <textarea id="students" rows="8" cols="30" placeholder="Anna,w\nLukas,m"></textarea>
+  </label><br />
+  <label>Deadline (YYYY-MM-DD): <input type="date" id="deadline" /></label><br /><br />
 
-  <div id="linkArea" style="margin-top: 20px;"></div>
+  <button onclick="createVoting()">Tabelle erstellen & Link generieren</button>
+  <p id="generatedLinks"></p>
 
   <script src="main.js"></script>
 </body>
