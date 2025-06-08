@@ -2,22 +2,15 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Ergebnisse</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Awards – Ergebnisse</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>Student Awards - Ergebnisse</h1>
-    <div id="resultSection">
-      <label for="resultCode">Ergebnis-Code eingeben:</label>
-      <input type="text" id="resultCode" maxlength="5" />
-      <button onclick="loadResults()">Ergebnisse laden</button>
-    </div>
-
-    <div id="results" style="display:none;"></div>
-  </main>
-
+  <h1>Student Awards – Ergebnisse</h1>
+  <label>Host-Code: <input type="text" id="resultCode" /></label>
+  <button onclick="loadResults()">Ergebnisse anzeigen</button>
+  <div id="resultDisplay"></div>
   <script src="main.js"></script>
 </body>
 </html>
