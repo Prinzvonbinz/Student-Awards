@@ -1,148 +1,144 @@
-let sessionData = {};
+const HOST_KEY = "student_awards_hosts";
+const VOTE_KEY = "student_awards_votes";
 
-function generateCode() {
-  return Math.random().toString(36).substring(2, 7).toUpperCase();
+// Speicher-Utils
+function saveToStorage(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("hostForm");
-  const voteArea = document.getElementById("voteArea");
-  const submitVote = document.getElementById("submitVote");
-  const resultsContainer = document.getElementById("results");
+function loadFromStorage(key) {
+  return JSON.parse(localStorage.getItem(key) || "[]");
+}
 
-  if (form) {
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-
-      const year = document.getElementById("year").value;
-      const className = document.getElementById("class").value;
-      const categories = document.getElementById("categories").value.split(",");
-      const deadline = document.getElementById("deadline").value;
-      const studentsRaw = document.getElementById("students").value.trim().split("\n");
-
-      const students = studentsRaw.map(line => {
-        const [name, gender] = line.split(",");
-        return { name: name.trim(), gender: gender.trim().toLowerCase() };
-      });
-
-      const code = generateCode();
-      sessionStorage.setItem(code, JSON.stringify({
-        year, className, categories, deadline, students, votes: []
-      }));
-
-      document.getElementById("generatedLink").innerHTML = `
-        <p>Abstimmungslink: <a href="vote.html?code=${code}" target="_blank">vote.html?code=${code}</a></p>
-        <p>Ergebnislink: <a href="result.html?code=${code}" target="_blank">result.html?code=${code}</a></p>
-      `;
-    });
+// Random-Code Generator
+function generateCode(length = 5) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  // Abstimmungsseite
-  if (voteArea && location.search.includes("code")) {
-    const urlCode = new URLSearchParams(location.search).get("code");
-    const data = JSON.parse(sessionStorage.getItem(urlCode));
-    if (!data) return;
+  return code;
+}
 
-    const table = document.createElement("table");
-    table.className = "category-table";
-    const header = table.insertRow();
-    header.insertCell().innerText = "Kategorie";
-    header.insertCell().innerText = "Junge";
-    header.insertCell().innerText = "Mädchen";
+// Host-Funktionen
+function createHostConfig(form) {
+  const jahr = form.jahr.value;
+  const klasse = form.klasse.value;
+  const kategorien = form.kategorien.value.split(",").map(k => k.trim());
+  const schueler = form.schueler.value.split("\n").map(s => {
+    const [name, gender] = s.split(",").map(x => x.trim());
+    return { name, gender };
+  });
+  const deadline = form.deadline.value;
 
-    data.categories.forEach(cat => {
-      const row = table.insertRow();
-      row.insertCell().innerText = cat;
-      const boyCell = row.insertCell();
-      const girlCell = row.insertCell();
+  const code = generateCode();
+  const hostConfigs = loadFromStorage(HOST_KEY);
+  hostConfigs.push({
+    code,
+    jahr,
+    klasse,
+    kategorien,
+    schueler,
+    deadline,
+    created: Date.now(),
+    votes: [],
+    link: location.origin + location.pathname + "?vote=" + code,
+    resultLink: location.origin + location.pathname + "?result=" + code
+  });
+  saveToStorage(HOST_KEY, hostConfigs);
+  return { code, voteLink: hostConfigs.at(-1).link, resultLink: hostConfigs.at(-1).resultLink };
+}
 
-      const boys = data.students.filter(s => s.gender === "m");
-      const girls = data.students.filter(s => s.gender === "w");
+function getHostConfigByCode(code) {
+  return loadFromStorage(HOST_KEY).find(cfg => cfg.code === code);
+}
 
-      boyCell.appendChild(createSelect(boys, `${cat}-m`));
-      girlCell.appendChild(createSelect(girls, `${cat}-w`));
-    });
+function saveVote(code, newVote) {
+  const hostConfigs = loadFromStorage(HOST_KEY);
+  const config = hostConfigs.find(cfg => cfg.code === code);
+  if (!config) return false;
 
-    voteArea.appendChild(table);
+  const exists = config.votes.some(v => v.id === newVote.id);
+  if (!exists) {
+    config.votes.push(newVote);
+    saveToStorage(HOST_KEY, hostConfigs);
+    return true;
+  }
+  return false;
+}
 
-    submitVote.addEventListener("click", () => {
-      const vote = {};
-      let allFilled = true;
+function getVotesByCode(code) {
+  const config = getHostConfigByCode(code);
+  return config ? config.votes : [];
+}
 
-      data.categories.forEach(cat => {
-        const boyVal = document.getElementById(`${cat}-m`).value;
-        const girlVal = document.getElementById(`${cat}-w`).value;
+function getVoteCount(code) {
+  const config = getHostConfigByCode(code);
+  return config ? config.votes.length : 0;
+}
 
-        if (!boyVal || !girlVal) allFilled = false;
-        vote[`${cat}-m`] = boyVal;
-        vote[`${cat}-w`] = girlVal;
-      });
+function getTotalVoters(code) {
+  const config = getHostConfigByCode(code);
+  return config ? config.schueler.length : 0;
+}
+// Ergebnisberechnung
+function calculateResults(code) {
+  const config = getHostConfigByCode(code);
+  if (!config) return null;
 
-      if (!allFilled) {
-        document.getElementById("message").innerText = "Bitte alle Felder ausfüllen oder '-' wählen.";
-        return;
+  const results = {};
+  const now = new Date();
+  const deadline = new Date(config.deadline);
+  if (now < deadline) return "too_early";
+
+  for (const kat of config.kategorien) {
+    results[kat] = { m: {}, w: {} };
+  }
+
+  for (const vote of config.votes) {
+    for (const kat of config.kategorien) {
+      const selected = vote.selection[kat];
+      if (selected !== "-") {
+        const gender = config.schueler.find(s => s.name === selected)?.gender;
+        if (gender && results[kat][gender]) {
+          results[kat][gender][selected] = (results[kat][gender][selected] || 0) + 1;
+        }
       }
-
-      data.votes.push(vote);
-      sessionStorage.setItem(urlCode, JSON.stringify(data));
-      voteArea.innerHTML = "";
-      document.getElementById("message").innerText = "Danke für deine Teilnahme!";
-      submitVote.disabled = true;
-    });
-  }
-
-  function createSelect(options, id) {
-    const select = document.createElement("select");
-    select.id = id;
-    const none = document.createElement("option");
-    none.value = "-";
-    none.innerText = "- Enthaltung -";
-    select.appendChild(none);
-
-    options.forEach(o => {
-      const opt = document.createElement("option");
-      opt.value = o.name;
-      opt.innerText = o.name;
-      select.appendChild(opt);
-    });
-
-    return select;
-  }
-
-  // Ergebnisanzeige
-  if (resultsContainer && location.search.includes("code")) {
-    const urlCode = new URLSearchParams(location.search).get("code");
-    const data = JSON.parse(sessionStorage.getItem(urlCode));
-    if (!data) return;
-
-    const deadline = new Date(data.deadline);
-    const now = new Date();
-    if (now < deadline) {
-      resultsContainer.innerText = "Die Ergebnisse sind noch nicht verfügbar.";
-      return;
     }
-
-    const result = {};
-
-    data.votes.forEach(vote => {
-      Object.keys(vote).forEach(key => {
-        const name = vote[key];
-        if (name === "-") return;
-        if (!result[key]) result[key] = {};
-        result[key][name] = (result[key][name] || 0) + 1;
-      });
-    });
-
-    data.categories.forEach(cat => {
-      ["m", "w"].forEach(g => {
-        const key = `${cat}-${g}`;
-        const votes = result[key] || {};
-        const max = Math.max(...Object.values(votes));
-        const winners = Object.keys(votes).filter(name => votes[name] === max);
-
-        const div = document.createElement("div");
-        div.innerHTML = `<strong>${cat} (${g === "m" ? "Junge" : "Mädchen"})</strong>: ${winners.join(", ")} (${max} Stimmen)`;
-        resultsContainer.appendChild(div);
-      });
-    });
   }
-});
+
+  const finalWinners = {};
+  for (const kat of config.kategorien) {
+    finalWinners[kat] = { m: [], w: [] };
+    for (const g of ["m", "w"]) {
+      const entries = Object.entries(results[kat][g]);
+      if (entries.length === 0) continue;
+      const max = Math.max(...entries.map(e => e[1]));
+      finalWinners[kat][g] = entries.filter(e => e[1] === max).map(e => ({ name: e[0], votes: e[1] }));
+    }
+  }
+  return finalWinners;
+}
+
+// UI: Ergebnisse anzeigen
+function showResults(resultData, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  for (const [kat, genders] of Object.entries(resultData)) {
+    const block = document.createElement("div");
+    block.className = "result-block";
+    block.innerHTML = `<h3>${kat}</h3>`;
+    for (const g of ["m", "w"]) {
+      const title = g === "m" ? "Jungen" : "Mädchen";
+      const names = genders[g].map(e => `${e.name} (${e.votes})`).join(", ") || "–";
+      block.innerHTML += `<p><strong>${title}:</strong> ${names}</p>`;
+    }
+    container.appendChild(block);
+  }
+}
+
+// UI: Fehlermeldung anzeigen
+function showError(containerId, msg) {
+  const el = document.getElementById(containerId);
+  if (el) el.innerHTML = `<p class="error">${msg}</p>`;
+}
