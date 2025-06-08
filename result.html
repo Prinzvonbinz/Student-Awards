@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student Awards – Ergebnisse</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ergebnisse</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Student Awards – Ergebnisse</h1>
-  <label>Host-Code: <input type="text" id="resultCode" /></label>
-  <button onclick="loadResults()">Ergebnisse anzeigen</button>
-  <div id="resultDisplay"></div>
+  <h1>Ergebnisse</h1>
+  <div id="resultContainer"></div>
+
   <script src="main.js"></script>
+  <script>
+    window.onload = loadResultPage;
+  </script>
 </body>
 </html>
