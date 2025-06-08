@@ -1,182 +1,30 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Student Awards - Abstimmung</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Awards - Abstimmung</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Abstimmung</h1>
-  <div id="info"></div>
-  <div id="voteArea" style="display:none;">
-    <div>
-      <label>
-        <input type="radio" name="gender" value="m" checked /> Junge
-      </label>
-      <label>
-        <input type="radio" name="gender" value="w" /> Mädchen
-      </label>
+  <main class="container">
+    <h1>Student Awards - Abstimmung</h1>
+    <div id="voteSection">
+      <label for="voteCode">Abstimmungs-Code eingeben:</label>
+      <input type="text" id="voteCode" maxlength="5" />
+      <button onclick="loadVoting()">Laden</button>
     </div>
-    <table id="voteTable" border="1" cellpadding="5" cellspacing="0">
-      <thead>
-        <tr>
-          <th>Kategorie</th>
-          <th>Auswahl</th>
-        </tr>
-      </thead>
-      <tbody id="voteTableBody"></tbody>
-    </table>
-    <button id="submitVote">Abgeben</button>
-  </div>
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const storageKey = 'studentAwards_' + code;
-    const infoDiv = document.getElementById('info');
-    const voteArea = document.getElementById('voteArea');
-    const voteTableBody = document.getElementById('voteTableBody');
-    const submitBtn = document.getElementById('submitVote');
+    <div id="votingFormSection" style="display:none;">
+      <form id="votingForm"></form>
+      <button onclick="submitVote()">Abgeben</button>
+    </div>
 
-    if (!code) {
-      infoDiv.textContent = 'Kein Code angegeben.';
-      voteArea.style.display = 'none';
-      throw new Error('Kein Code im URL-Parameter.');
-    }
+    <div id="thankYou" style="display:none;">
+      <h2>Vielen Dank für deine Stimme!</h2>
+    </div>
+  </main>
 
-    let data = localStorage.getItem(storageKey);
-    if (!data) {
-      infoDiv.textContent = 'Ungültiger Code.';
-      voteArea.style.display = 'none';
-      throw new Error('Kein Datensatz gefunden für Code.');
-    }
-
-    data = JSON.parse(data);
-
-    // Prüfen ob Deadline überschritten (abstimmen nur vor Deadline)
-    const deadlineDate = new Date(data.deadline);
-    const now = new Date();
-    if (now > deadlineDate) {
-      infoDiv.textContent = 'Die Abstimmungsfrist ist abgelaufen.';
-      voteArea.style.display = 'none';
-      throw new Error('Deadline überschritten.');
-    }
-
-    // Prüfen ob schon abgestimmt wurde (keine Mehrfachabstimmung)
-    // Wir verwenden einen Key im sessionStorage für diese Sitzung + Code
-    const voteSessionKey = 'studentAwardsVoted_' + code;
-    if (sessionStorage.getItem(voteSessionKey)) {
-      infoDiv.textContent = 'Du hast bereits abgestimmt. Danke!';
-      voteArea.style.display = 'none';
-      throw new Error('Schon abgestimmt.');
-    }
-
-    infoDiv.textContent = `Jahr: ${data.year} | Klasse: ${data.className} | Deadline: ${data.deadline}`;
-
-    // Geschlechtsauswahl - Event
-    const genderRadios = document.getElementsByName('gender');
-
-    function buildTable(gender) {
-      voteTableBody.innerHTML = '';
-      data.categories.forEach(cat => {
-        const tr = document.createElement('tr');
-        const tdCat = document.createElement('td');
-        tdCat.textContent = cat;
-        const tdSelect = document.createElement('td');
-
-        // Auswahl: Dropdown mit Schülernamen oder Enthaltung (-)
-        const select = document.createElement('select');
-        select.dataset.category = cat;
-
-        // Option Enthaltung
-        const optNone = document.createElement('option');
-        optNone.value = '';
-        optNone.textContent = '- (Enthaltung)';
-        select.appendChild(optNone);
-
-        // Alle passenden Schüler einfügen
-        data.students.filter(s => s.gender === gender).forEach(s => {
-          const option = document.createElement('option');
-          option.value = s.name;
-          option.textContent = s.name;
-          select.appendChild(option);
-        });
-
-        tdSelect.appendChild(select);
-        tr.appendChild(tdCat);
-        tr.appendChild(tdSelect);
-        voteTableBody.appendChild(tr);
-      });
-    }
-
-    // Initial bauen für Standard 'm'
-    buildTable('m');
-
-    genderRadios.forEach(radio => {
-      radio.addEventListener('change', () => {
-        buildTable(radio.value);
-      });
-    });
-
-    submitBtn.addEventListener('click', () => {
-      // Alle Felder müssen ausgefüllt sein (entweder Name oder Enthaltung)
-      const selects = voteTableBody.querySelectorAll('select');
-      const votes = [];
-      for (const sel of selects) {
-        if (!sel.value) {
-          alert(`Bitte stimme in allen Kategorien ab oder enthalte dich.`);
-          return;
-        }
-        votes.push({
-          category: sel.dataset.category,
-          vote: sel.value // '' bedeutet Enthaltung
-        });
-      }
-
-      // Daten erneut laden, um Race Conditions zu vermeiden
-      let stored = localStorage.getItem(storageKey);
-      if (!stored) {
-        alert('Fehler: Daten nicht gefunden.');
-        return;
-      }
-      stored = JSON.parse(stored);
-
-      // Prüfen ob schon abgestimmt wurde (nochmal, doppelt absichern)
-      if (stored.votedUsers && stored.votedUsers.includes(sessionStorage.getItem('sessionID_' + code))) {
-        alert('Du hast bereits abgestimmt!');
-        return;
-      }
-
-      // Falls noch keine sessionID für diese Sitzung existiert -> erzeugen
-      if (!sessionStorage.getItem('sessionID_' + code)) {
-        // Einfach eine zufällige ID
-        const sessionID = Math.random().toString(36).substr(2, 9);
-        sessionStorage.setItem('sessionID_' + code, sessionID);
-      }
-      const voterID = sessionStorage.getItem('sessionID_' + code);
-
-      // Stimmen speichern:
-      // votes = [{category, vote}] vote='' heißt Enthaltung -> nicht zählen
-      // Wir speichern alle Stimmen im Array stored.votes, jedes Element: {voterID, gender, votes: [...]}
-
-      // Wenn dieser voter schon drin ist, verhindern
-      if (!stored.votedUsers) stored.votedUsers = [];
-      if (stored.votedUsers.includes(voterID)) {
-        alert('Du hast bereits abgestimmt!');
-        return;
-      }
-
-      stored.votes.push({ voterID, gender: document.querySelector('input[name=gender]:checked').value, votes });
-      stored.votedUsers.push(voterID);
-
-      localStorage.setItem(storageKey, JSON.stringify(stored));
-      sessionStorage.setItem(voteSessionKey, 'true');
-
-      alert('Danke für deine Teilnahme!');
-      voteArea.style.display = 'none';
-      infoDiv.textContent = 'Du hast erfolgreich abgestimmt. Danke!';
-    });
-  </script>
+  <script src="main.js"></script>
 </body>
 </html>
