@@ -3,24 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student Awards - Host</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Abstimmung erstellen</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Student Awards – Host Menü</h1>
+  <h1>Abstimmung erstellen</h1>
 
-  <label>Jahr: <input type="number" id="year" value="2025" /></label><br />
-  <label>Klasse: <input type="text" id="class" /></label><br />
-  <label>Kategorien (kommagetrennt):<br />
-    <input type="text" id="categories" placeholder="Lustig, Sportlich, ..."/>
-  </label><br />
-  <label>Schülerliste (Name,m/w pro Zeile):<br />
-    <textarea id="students" rows="8" cols="30" placeholder="Anna,w\nLukas,m"></textarea>
-  </label><br />
-  <label>Deadline (YYYY-MM-DD): <input type="date" id="deadline" /></label><br /><br />
+  <label>Jahrgang:</label><br>
+  <input type="text" id="year"><br><br>
 
-  <button onclick="createVoting()">Tabelle erstellen & Link generieren</button>
-  <p id="generatedLinks"></p>
+  <label>Klasse:</label><br>
+  <input type="text" id="class"><br><br>
+
+  <label>Kategorien (kommagetrennt):</label><br>
+  <textarea id="categories" rows="2" cols="30"></textarea><br><br>
+
+  <label>Schüler (je Zeile: Name, Geschlecht [m/w]):</label><br>
+  <textarea id="students" rows="10" cols="30"></textarea><br><br>
+
+  <label>Deadline (z. B. 2025-06-30T20:00):</label><br>
+  <input type="datetime-local" id="deadline"><br><br>
+
+  <button onclick="setupHost()">Abstimmung starten</button>
+
+  <div id="generatedLinks"></div>
 
   <script src="main.js"></script>
 </body>
