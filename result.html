@@ -1,118 +1,23 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Student Awards - Ergebnisse</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Awards - Ergebnisse</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Student Awards - Ergebnisse</h1>
-  <div id="info"></div>
-  <div id="resultArea" style="display:none;">
-    <table id="resultTable" border="1" cellpadding="5" cellspacing="0">
-      <thead>
-        <tr>
-          <th>Kategorie</th>
-          <th>Junge(n) mit Stimmenanzahl</th>
-          <th>Mädchen mit Stimmenanzahl</th>
-        </tr>
-      </thead>
-      <tbody id="resultTableBody"></tbody>
-    </table>
-  </div>
+  <main class="container">
+    <h1>Student Awards - Ergebnisse</h1>
+    <div id="resultSection">
+      <label for="resultCode">Ergebnis-Code eingeben:</label>
+      <input type="text" id="resultCode" maxlength="5" />
+      <button onclick="loadResults()">Ergebnisse laden</button>
+    </div>
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const storageKey = 'studentAwards_' + code;
-    const infoDiv = document.getElementById('info');
-    const resultArea = document.getElementById('resultArea');
-    const resultTableBody = document.getElementById('resultTableBody');
+    <div id="results" style="display:none;"></div>
+  </main>
 
-    if (!code) {
-      infoDiv.textContent = 'Kein Code angegeben.';
-      resultArea.style.display = 'none';
-      throw new Error('Kein Code im URL-Parameter.');
-    }
-
-    let data = localStorage.getItem(storageKey);
-    if (!data) {
-      infoDiv.textContent = 'Ungültiger Code.';
-      resultArea.style.display = 'none';
-      throw new Error('Kein Datensatz gefunden für Code.');
-    }
-
-    data = JSON.parse(data);
-
-    // Prüfen ob Deadline erreicht oder überschritten
-    const deadlineDate = new Date(data.deadline);
-    const now = new Date();
-    if (now < deadlineDate) {
-      infoDiv.textContent = `Ergebnisse sind erst nach Ablauf der Deadline (${data.deadline}) sichtbar.`;
-      resultArea.style.display = 'none';
-      throw new Error('Deadline noch nicht erreicht.');
-    }
-
-    infoDiv.textContent = `Jahr: ${data.year} | Klasse: ${data.className} | Deadline: ${data.deadline}`;
-
-    // Wenn keine Stimmen abgegeben wurden
-    if (!data.votes || data.votes.length === 0) {
-      infoDiv.textContent += ' | Es wurden noch keine Stimmen abgegeben.';
-      resultArea.style.display = 'none';
-      throw new Error('Keine Stimmen.');
-    }
-
-    // Auswertung:
-    // Für jede Kategorie und Geschlecht zählen wir, wie oft jeder Name gewählt wurde
-    // Dann ermitteln wir den/die Gewinner mit höchster Stimmenanzahl (bei Gleichstand alle)
-
-    function countVotes(gender, category) {
-      const counts = {};
-      data.votes.forEach(entry => {
-        if (entry.gender === gender) {
-          const voteForCat = entry.votes.find(v => v.category === category);
-          if (voteForCat && voteForCat.vote !== '') {
-            counts[voteForCat.vote] = (counts[voteForCat.vote] || 0) + 1;
-          }
-        }
-      });
-      return counts;
-    }
-
-    function getWinners(counts) {
-      const maxVotes = Math.max(...Object.values(counts), 0);
-      if (maxVotes === 0) return [];
-      return Object.entries(counts).filter(([name, count]) => count === maxVotes);
-    }
-
-    // Tabelle aufbauen
-    resultTableBody.innerHTML = '';
-
-    data.categories.forEach(cat => {
-      const tr = document.createElement('tr');
-
-      const tdCat = document.createElement('td');
-      tdCat.textContent = cat;
-      tr.appendChild(tdCat);
-
-      ['m', 'w'].forEach(gender => {
-        const td = document.createElement('td');
-        const counts = countVotes(gender, cat);
-        const winners = getWinners(counts);
-        if (winners.length === 0) {
-          td.textContent = '- keine Stimmen -';
-        } else {
-          // Mehrere Gewinner bei Gleichstand
-          td.innerHTML = winners.map(([name, count]) => `${name} (${count})`).join('<br/>');
-        }
-        tr.appendChild(td);
-      });
-
-      resultTableBody.appendChild(tr);
-    });
-
-    resultArea.style.display = 'block';
-  </script>
+  <script src="main.js"></script>
 </body>
 </html>
