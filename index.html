@@ -2,37 +2,33 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Host Menü</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Awards – Host</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>Student Awards - Host Menü</h1>
-    <form id="hostForm">
-      <label for="year">Jahr:</label>
-      <input type="number" id="year" name="year" min="2000" max="2100" required value="2025" />
+  <h1>Student-Awards – Host-Menü</h1>
 
-      <label for="class">Klasse:</label>
-      <input type="text" id="class" name="class" placeholder="z.B. 10b" required />
+  <form id="createForm">
+    <label>Jahr:
+      <input type="number" id="jahr" required min="2024" value="2025">
+    </label><br>
+    <label>Klasse:
+      <input type="text" id="klasse" required placeholder="z.B. 10b">
+    </label><br>
+    <label>Kategorien (kommagetrennt):
+      <input type="text" id="kategorien" required placeholder="Lustig, Sportlich, ...">
+    </label><br>
+    <label>Schüler (Name, m/w) – ein Name pro Zeile:
+      <textarea id="schueler" required rows="8" placeholder="Max Mustermann, m&#10;Anna Musterfrau, w"></textarea>
+    </label><br>
+    <label>Deadline:
+      <input type="date" id="deadline" required>
+    </label><br>
+    <button type="submit">Einstellen</button>
+  </form>
 
-      <label for="categories">Kategorien (kommagetrennt):</label>
-      <input type="text" id="categories" name="categories" placeholder="Lustig, sportlich, kreativ" required />
-
-      <label for="students">Schüler (Name, m/w pro Zeile, durch Komma getrennt):</label>
-      <textarea id="students" name="students" placeholder="Max, m\nAnna, w\n..." required rows="8"></textarea>
-
-      <label for="deadline">Deadline (Ergebnisse sichtbar ab):</label>
-      <input type="date" id="deadline" name="deadline" required />
-
-      <button type="submit">Einstellen</button>
-    </form>
-
-    <section id="generateSection" style="display:none; margin-top: 1em;">
-      <button id="generateTableLink">Tabelle erstellen &amp; Link generieren</button>
-      <div id="links" style="margin-top: 1em;"></div>
-    </section>
-  </main>
+  <div id="linkArea" style="margin-top: 20px;"></div>
 
   <script src="main.js"></script>
 </body>
