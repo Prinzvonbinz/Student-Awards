@@ -2,28 +2,17 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Awards - Abstimmung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Awards – Abstimmung</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>Student Awards - Abstimmung</h1>
-    <div id="voteSection">
-      <label for="voteCode">Abstimmungs-Code eingeben:</label>
-      <input type="text" id="voteCode" maxlength="5" />
-      <button onclick="loadVoting()">Laden</button>
-    </div>
+  <h1>Student Awards – Abstimmung</h1>
+  <label>Code: <input type="text" id="codeInput" /></label>
+  <button onclick="loadVoting()">Starten</button>
 
-    <div id="votingFormSection" style="display:none;">
-      <form id="votingForm"></form>
-      <button onclick="submitVote()">Abgeben</button>
-    </div>
-
-    <div id="thankYou" style="display:none;">
-      <h2>Vielen Dank für deine Stimme!</h2>
-    </div>
-  </main>
+  <div id="votingSection" style="display: none;"></div>
+  <button id="submitBtn" onclick="submitVote()" style="display: none;">Abgeben</button>
 
   <script src="main.js"></script>
 </body>
