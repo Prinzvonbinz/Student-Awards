@@ -1,8 +1,7 @@
 body {
   font-family: sans-serif;
-  background-color: #f9f9f9;
+  background-color: #f5f5f5;
   padding: 20px;
-  color: #333;
 }
 
 h1 {
@@ -13,6 +12,7 @@ textarea, input, select {
   width: 100%;
   max-width: 400px;
   margin-bottom: 10px;
+  padding: 5px;
 }
 
 button {
@@ -21,16 +21,4 @@ button {
   padding: 10px 20px;
   border: none;
   cursor: pointer;
-  margin-top: 10px;
-}
-
-button:hover {
-  background-color: #3a0066;
-}
-
-.resultCategory {
-  margin-bottom: 20px;
-  padding: 10px;
-  background-color: #eaeaea;
-  border-radius: 6px;
 }
