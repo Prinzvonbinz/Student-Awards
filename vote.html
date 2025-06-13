@@ -2,18 +2,16 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Abstimmen</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Abstimmung</h1>
   <div id="voteContainer"></div>
   <button id="submitVote">Abstimmen</button>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="main.js"></script>
-  <script>
-    window.onload = loadVotePage;
-  </script>
+  <script>window.onload = loadVotePage;</script>
 </body>
 </html>
